@@ -1,0 +1,371 @@
+{
+  "description": "Individual classification of the 115 test functions formerly hidden by 20 module-level skips. Independent tests execute without external QE-Multiwfn-validation fixtures; fixture_dependent tests require external ORCA/Multiwfn data.",
+  "modules": {
+    "test_ase_adapter.py": {
+      "phase": "4/9C",
+      "type": "integration",
+      "reason": "ASE package; external ORCA fixture for equivalence",
+      "total": 2,
+      "independent": [
+        "test_ase_geometry_only_cannot_run_mayer"
+      ],
+      "fixture_dependent": [
+        "test_ase_geometry_matches_orca"
+      ],
+      "dependency": "ASE 3.29.0; external ORCA fixtures for equivalence",
+      "fixture": "QE-Multiwfn-validation/orca/{h2,h2o,benzene}/opt.xyz and sp.json",
+      "condition": "install ase; for equivalence set QE_P0_FIXTURES or place the validation tree as a sibling"
+    },
+    "test_ase_adapter_phase9c.py": {
+      "phase": "9C",
+      "type": "structural",
+      "reason": "ASE package (no external fixture)",
+      "total": 2,
+      "independent": [
+        "test_ase_structural_alias_and_geometry_only",
+        "test_ase_periodic_fails_closed"
+      ],
+      "fixture_dependent": [],
+      "dependency": "ASE 3.29.0 (no external fixture)",
+      "fixture": "none",
+      "condition": "install ase; tests run in the optional-dependency job"
+    },
+    "test_builder.py": {
+      "phase": "9B/10",
+      "type": "unit/integration",
+      "reason": "external ORCA fixtures for full-state tests",
+      "total": 11,
+      "independent": [
+        "test_builder_direct_numpy_rhf_and_array_ownership",
+        "test_builder_requires_explicit_unit_and_open_shell_method",
+        "test_builder_rejects_bad_arrays",
+        "test_engine_direct_path_uses_strict_validation",
+        "test_builder_accepts_noncontiguous_and_float32_arrays"
+      ],
+      "fixture_dependent": [
+        "test_builder_full_state_from_shell_inputs_without_files",
+        "test_builder_open_shell_arrays_and_mayer_semantics",
+        "test_builder_canonical_f_preserves_1_2_metadata",
+        "test_builder_rejects_unknown_full_state_normalization",
+        "test_builder_readiness_rohf_and_analysis_wrapper",
+        "test_builder_full_state_open_shell_without_matrices"
+      ],
+      "dependency": "none for 5 independent tests; external ORCA fixtures for 6 full-state tests",
+      "fixture": "QE-Multiwfn-validation/orca/{h2o,uhf/o2_uhf_sto3g,rohf/o2_rohf_sto3g,df/h2s_def2tzvp}",
+      "condition": "independent tests always run; full-state tests require QE_P0_FIXTURES"
+    },
+    "test_cache_invalidation.py": {
+      "phase": "6",
+      "type": "integration",
+      "reason": "external ORCA fixtures",
+      "total": 2,
+      "independent": [],
+      "fixture_dependent": [
+        "test_new_system_invalidates_derived_caches",
+        "test_same_dimension_new_system_still_invalidates_primary_cache"
+      ],
+      "dependency": "external ORCA fixtures",
+      "fixture": "QE-Multiwfn-validation/orca/{h2,h2o}",
+      "condition": "set QE_P0_FIXTURES to an authorized validation tree"
+    },
+    "test_cartesian_df.py": {
+      "phase": "8B/10",
+      "type": "scientific",
+      "reason": "external Cartesian d fixture",
+      "total": 3,
+      "independent": [],
+      "fixture_dependent": [
+        "test_cartesian_model_and_mapping",
+        "test_cartesian_v1_mayer_matches_multiwfn",
+        "test_cartesian_unknown_component_rejected"
+      ],
+      "dependency": "external Cartesian d fixture",
+      "fixture": "QE-Multiwfn-validation/fixtures/cartesian/h2o_631gstar_cart",
+      "condition": "set QE_P0_FIXTURES to an authorized validation tree"
+    },
+    "test_cclib_adapter.py": {
+      "phase": "4/6",
+      "type": "adapter/scientific",
+      "reason": "external ORCA fixtures; cclib ORCA parser fail-closed",
+      "total": 4,
+      "independent": [],
+      "fixture_dependent": [
+        "test_cclib_fails_closed_on_orca_output",
+        "test_cclib_rhf_conversion_with_basis",
+        "test_cclib_uhf_and_rohf_conversion_with_basis",
+        "test_cclib_without_basis_is_partial_and_fails_closed"
+      ],
+      "dependency": "external ORCA fixtures; cclib ORCA real parser fail-closed",
+      "fixture": "QE-Multiwfn-validation/orca/{h2o,uhf,rohf}",
+      "condition": "set QE_P0_FIXTURES; cclib real ORCA parser remains blocked"
+    },
+    "test_full_flow_mdm.py": {
+      "phase": "6E",
+      "type": "integration",
+      "reason": "external ORCA fixtures, including d/f",
+      "total": 8,
+      "independent": [],
+      "fixture_dependent": [
+        "test_full_flow_rhf_without_matrices",
+        "test_full_flow_uhf_and_rohf_without_matrices",
+        "test_full_flow_spherical_d_without_matrices",
+        "test_full_flow_cartesian_d_without_matrices",
+        "test_full_flow_requires_orbitals",
+        "test_full_flow_requires_normalization_metadata",
+        "test_missing_matrices_still_rejected_by_default",
+        "test_f_original_path_fails_closed"
+      ],
+      "dependency": "external ORCA fixtures, including d/f",
+      "fixture": "QE-Multiwfn-validation/orca/{h2,h2o,benzene,df,cartesian}",
+      "condition": "set QE_P0_FIXTURES to an authorized validation tree"
+    },
+    "test_genp_integration.py": {
+      "phase": "6A",
+      "type": "integration",
+      "reason": "external ORCA fixtures",
+      "total": 4,
+      "independent": [],
+      "fixture_dependent": [
+        "test_genp_rhf_matches_reference",
+        "test_genp_uhf_and_rohf_match_reference",
+        "test_genp_spherical_d",
+        "test_genp_cartesian_d"
+      ],
+      "dependency": "external ORCA fixtures",
+      "fixture": "QE-Multiwfn-validation/orca/{h2,h2o,uhf,rohf,df,cartesian}",
+      "condition": "set QE_P0_FIXTURES to an authorized validation tree"
+    },
+    "test_genpprim_integration.py": {
+      "phase": "6B",
+      "type": "integration",
+      "reason": "external ORCA fixtures",
+      "total": 4,
+      "independent": [],
+      "fixture_dependent": [
+        "test_genpprim_rhf",
+        "test_genpprim_uhf_and_rohf",
+        "test_genpprim_spherical_d",
+        "test_genpprim_cartesian_d"
+      ],
+      "dependency": "external ORCA fixtures",
+      "fixture": "QE-Multiwfn-validation/orca/{h2,h2o,uhf,rohf,df,cartesian}",
+      "condition": "set QE_P0_FIXTURES to an authorized validation tree"
+    },
+    "test_gensbas_integration.py": {
+      "phase": "6C/6D",
+      "type": "integration",
+      "reason": "external ORCA fixtures",
+      "total": 6,
+      "independent": [],
+      "fixture_dependent": [
+        "test_gensbas_curr_rhf_matches_reference",
+        "test_gensbas_curr_uhf_and_rohf",
+        "test_gensbas_curr_spherical_d",
+        "test_gensbas_cartesian_d_intermediate",
+        "test_gensbas_full_flow_spherical_d_mayer",
+        "test_gensbas_curr_matches_multiwfn_extracted"
+      ],
+      "dependency": "external ORCA fixtures",
+      "fixture": "QE-Multiwfn-validation/orca/{h2,h2o,uhf,rohf,df,cartesian}",
+      "condition": "set QE_P0_FIXTURES to an authorized validation tree"
+    },
+    "test_mdm_1_1.py": {
+      "phase": "MDM 1.1",
+      "type": "schema/unit",
+      "reason": "external ORCA fixtures for model checks",
+      "total": 3,
+      "independent": [
+        "test_legacy_roundtrip_still_bitwise"
+      ],
+      "fixture_dependent": [
+        "test_schema_1_1_fields_and_summary",
+        "test_mdm_components_present_for_rhf_uhf_rohf"
+      ],
+      "dependency": "none for 1 legacy test; external ORCA fixtures for 2 model tests",
+      "fixture": "QE-Multiwfn-validation/orca/{h2o,uhf,rohf}",
+      "condition": "independent legacy test always runs; model tests require QE_P0_FIXTURES"
+    },
+    "test_native_f_support.py": {
+      "phase": "8B",
+      "type": "scientific",
+      "reason": "external H2S/def2-TZVP f fixture",
+      "total": 6,
+      "independent": [],
+      "fixture_dependent": [
+        "test_f_full_flow_matches_supplied_reference",
+        "test_f_full_flow_matches_multiwfn_standalone",
+        "test_f_primitive_density_is_separate_and_has_correct_trace",
+        "test_noncanonical_f_original_path_rejected",
+        "test_noncanonical_f_overlap_generation_rejected",
+        "test_canonical_f_overlap_generation_allowed"
+      ],
+      "dependency": "external H2S/def2-TZVP f fixture",
+      "fixture": "QE-Multiwfn-validation/orca/df/h2s_def2tzvp",
+      "condition": "set QE_P0_FIXTURES to an authorized validation tree"
+    },
+    "test_normalization.py": {
+      "phase": "5/10",
+      "type": "unit/scientific",
+      "reason": "external ORCA/d-f/Cartesian fixtures",
+      "total": 9,
+      "independent": [
+        "test_schema_1_1_and_unit_normalization",
+        "test_legacy_model_normalization_incomplete"
+      ],
+      "fixture_dependent": [
+        "test_contraction_self_overlap_known_shell",
+        "test_orca_rhf_normalization_report",
+        "test_orca_spherical_df_normalization",
+        "test_orca_uhf_rohf_normalization",
+        "test_cartesian_fixture_normalization_source_scaled",
+        "test_sp_representation_equivalence",
+        "test_5d_6d_are_distinct_basis_sets"
+      ],
+      "dependency": "none for 2 unit tests; external ORCA/d-f/Cartesian fixtures for 7",
+      "fixture": "QE-Multiwfn-validation/orca/{h2,h2o,benzene,df} and fixtures/cartesian",
+      "condition": "independent unit tests always run; model/normalization tests require QE_P0_FIXTURES"
+    },
+    "test_orca_adapter.py": {
+      "phase": "4/6/7",
+      "type": "adapter/scientific",
+      "reason": "external ORCA fixtures",
+      "total": 13,
+      "independent": [],
+      "fixture_dependent": [
+        "test_orca_model_metadata",
+        "test_orca_ao_map_matches_legacy_arrays",
+        "test_orca_matrices_are_bitwise_reproducible",
+        "test_orca_v1_engine_reproduces_baseline_mayer",
+        "test_orca_provenance_records_version_and_hashes",
+        "test_from_orca_json_wrapper",
+        "test_orca_rejects_non_rhf",
+        "test_orca_legacy_engine_still_reproduces_baseline",
+        "test_orca_rejects_inconsistent_shell_labels",
+        "test_orca_spherical_df_model",
+        "test_orca_df_v1_mayer_vs_multiwfn",
+        "test_orca_df_vs_orca_bondorders",
+        "test_orca_cartesian_df_request_is_rejected"
+      ],
+      "dependency": "external ORCA fixtures",
+      "fixture": "QE-Multiwfn-validation/orca/{h2,h2o,benzene,df}",
+      "condition": "set QE_P0_FIXTURES to an authorized validation tree"
+    },
+    "test_orca_angular_integration.py": {
+      "phase": "7C",
+      "type": "scientific",
+      "reason": "external H2S/H2O d/f fixtures",
+      "total": 12,
+      "independent": [],
+      "fixture_dependent": [
+        "test_orca_f_default_remains_legacy_1_1",
+        "test_orca_f_canonicalization_is_1_2_and_preserves_invariants",
+        "test_orca_f_canonicalization_changes_only_f_cross_blocks",
+        "test_orca_f_second_canonicalization_rejected",
+        "test_orca_non_f_remains_1_1_by_default",
+        "test_orca_d_canonicalization_identity_phase",
+        "test_orca_canonical_model_deltas_are_consistent_with_mdm_1_2",
+        "test_orca_f_version_unvalidated_fails_closed",
+        "test_orca_f_missing_version_fails_closed",
+        "test_orca_f_backend_original_path_supported_in_phase8b",
+        "test_orca_uhf_rohf_legacy_paths_remain_1_1",
+        "test_orca_d_canonical_backend_mayer_matches_source"
+      ],
+      "dependency": "external H2S/H2O d/f fixtures",
+      "fixture": "QE-Multiwfn-validation/orca/df/{h2s_def2tzvp,h2o_631gstar}",
+      "condition": "set QE_P0_FIXTURES to an authorized validation tree"
+    },
+    "test_orca_mdm_1_2.py": {
+      "phase": "7C",
+      "type": "contract/scientific",
+      "reason": "external H2S/H2O d/f fixtures for model tests",
+      "total": 7,
+      "independent": [
+        "test_known_orca_f_convention_shape",
+        "test_unknown_program_fails_closed",
+        "test_phase_matrix_rejects_order_reordering"
+      ],
+      "fixture_dependent": [
+        "test_orca_f_canonical_model_has_shell_metadata",
+        "test_orca_f_source_metadata_is_recorded",
+        "test_orca_d_canonical_model_has_identity_phase",
+        "test_orca_canonical_does_not_mutate_source"
+      ],
+      "dependency": "none for 3 pure convention tests; external d/f fixtures for 4 model tests",
+      "fixture": "QE-Multiwfn-validation/orca/df/{h2s_def2tzvp,h2o_631gstar}",
+      "condition": "pure convention tests always run; model tests require QE_P0_FIXTURES"
+    },
+    "test_orca_optimization.py": {
+      "phase": "9",
+      "type": "integration",
+      "reason": "external ORCA optimization fixtures",
+      "total": 2,
+      "independent": [],
+      "fixture_dependent": [
+        "test_opt_geometry_matches_sp_and_mayer",
+        "test_opt_geometry_mismatch_fails_closed"
+      ],
+      "dependency": "external ORCA optimization fixtures",
+      "fixture": "QE-Multiwfn-validation/orca/{h2,h2o,benzene}",
+      "condition": "set QE_P0_FIXTURES to an authorized validation tree"
+    },
+    "test_pyscf_adapter.py": {
+      "phase": "9C/10",
+      "type": "adapter/scientific",
+      "reason": "PySCF package; external ORCA references",
+      "total": 8,
+      "independent": [],
+      "fixture_dependent": [
+        "test_pyscf_rhf_matches_orca",
+        "test_pyscf_open_shell_matches_orca",
+        "test_pyscf_full_state_without_matrices",
+        "test_pyscf_spherical_f_direct_and_full",
+        "test_pyscf_cartesian_d_matches_cartesian_fixture",
+        "test_pyscf_rejects_dft_and_nonconverged",
+        "test_pyscf_spherical_d_matches_orca",
+        "test_pyscf_p_components_are_distinct_and_ordered"
+      ],
+      "dependency": "PySCF 2.15.0; external ORCA references",
+      "fixture": "QE-Multiwfn-validation/orca/{h2,h2o,uhf,rohf,df,cartesian}",
+      "condition": "install pyscf and set QE_P0_FIXTURES"
+    },
+    "test_rohf.py": {
+      "phase": "6/8C",
+      "type": "scientific",
+      "reason": "external ROHF fixtures",
+      "total": 4,
+      "independent": [],
+      "fixture_dependent": [
+        "test_rohf_model_builds_and_validates",
+        "test_rohf_requires_explicit_open_shell_flag",
+        "test_rohf_v1_mayer_matches_multiwfn_and_orca",
+        "test_rohf_adapter_rejects_rhf_input"
+      ],
+      "dependency": "external ROHF fixtures and stored references",
+      "fixture": "QE-Multiwfn-validation/orca/rohf/o2_rohf_sto3g and rohf_results",
+      "condition": "set QE_P0_FIXTURES to an authorized validation tree"
+    },
+    "test_uhf.py": {
+      "phase": "6",
+      "type": "scientific",
+      "reason": "external UHF fixtures",
+      "total": 5,
+      "independent": [],
+      "fixture_dependent": [
+        "test_uhf_model_builds_and_validates",
+        "test_uhf_requires_explicit_open_shell_flag",
+        "test_uhf_v1_mayer_matches_multiwfn_and_orca",
+        "test_uhf_flag_is_reset_after_release",
+        "test_uhf_adapter_rejects_rhf_input"
+      ],
+      "dependency": "external UHF fixtures and stored references",
+      "fixture": "QE-Multiwfn-validation/orca/uhf/o2_uhf_sto3g and uhf_results",
+      "condition": "set QE_P0_FIXTURES to an authorized validation tree"
+    }
+  },
+  "totals": {
+    "functions": 115,
+    "independent": 14,
+    "fixture_dependent": 101,
+    "independent_without_optional_packages": 11
+  }
+}

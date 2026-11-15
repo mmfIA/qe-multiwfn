@@ -17,8 +17,9 @@ from qe_multiwfn.adapters.orca import (
 _HERE = Path(__file__).resolve()
 _VAL = _HERE.parents[3] / "QE-Multiwfn-validation"
 _ORCA = _VAL / "orca"
-if not _ORCA.exists():
-    pytest.skip("scientific fixtures unavailable", allow_module_level=True)
+requires_orca = pytest.mark.skipif(
+    not _ORCA.exists(), reason="scientific fixtures unavailable"
+)
 
 
 def _minimal_rhf():
@@ -101,6 +102,7 @@ def test_builder_rejects_bad_arrays():
         b.set_geometry(atomic_numbers=[1], coordinates=[[0, np.nan, 0]], unit="bohr")
 
 
+@requires_orca
 def test_builder_full_state_from_shell_inputs_without_files():
     src = from_orca_directory(_ORCA / "h2o")
     orb = src.wavefunction.orbitals
@@ -127,6 +129,7 @@ def test_builder_full_state_from_shell_inputs_without_files():
     (from_orca_uhf_directory, "uhf"),
     (from_orca_rohf_directory, "rohf"),
 ])
+@requires_orca
 def test_builder_open_shell_arrays_and_mayer_semantics(fn, name):
     src = fn(_ORCA / name / f"o2_{name}_sto3g")
     orb = src.wavefunction.orbitals
@@ -156,6 +159,7 @@ def test_builder_open_shell_arrays_and_mayer_semantics(fn, name):
     np.testing.assert_allclose(res.beta, ref.beta, atol=1e-7, rtol=0.0)
 
 
+@requires_orca
 def test_builder_canonical_f_preserves_1_2_metadata():
     src = from_orca_directory(_ORCA / "df" / "h2s_def2tzvp",
                               canonicalize_angular=True)
@@ -177,6 +181,7 @@ def test_builder_canonical_f_preserves_1_2_metadata():
     assert res.total.shape == (3, 3)
 
 
+@requires_orca
 def test_builder_rejects_unknown_full_state_normalization():
     src = from_orca_directory(_ORCA / "h2o")
     orb = src.wavefunction.orbitals
@@ -193,6 +198,7 @@ def test_builder_rejects_unknown_full_state_normalization():
         )
 
 
+@requires_orca
 def test_builder_readiness_rohf_and_analysis_wrapper():
     src = from_orca_rohf_directory(_ORCA / "rohf" / "o2_rohf_sto3g")
     assert src.readiness.analysis_ready["mayer"] is True
@@ -245,6 +251,7 @@ def test_builder_accepts_noncontiguous_and_float32_arrays():
     (from_orca_uhf_directory, "uhf"),
     (from_orca_rohf_directory, "rohf"),
 ])
+@requires_orca
 def test_builder_full_state_open_shell_without_matrices(fn, name):
     src = fn(_ORCA / name / f"o2_{name}_sto3g")
     orb = src.wavefunction.orbitals

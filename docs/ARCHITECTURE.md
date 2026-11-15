@@ -147,6 +147,21 @@ text parser is blocked; synthetic conversion with an explicit basis is
 supported. PBC, post-HF and ECP/EDF are not implemented. See
 `LIMITATIONS.md` for the current scope.
 
+## Geometry units and validation layers
+
+All public geometry entry points have an explicit unit contract: ORCA JSON
+requires `CoordinateUnits` (missing/unknown fails closed), ASE and cclib use
+their documented Å conventions with explicit Å→Bohr conversion, PySCF uses
+`atom_coords(unit="Bohr")`, and the builder/database protocols require a unit.
+The legacy `MolecularSystem` API keeps its documented Bohr contract; no
+magnitude-based inference is allowed.
+
+Validation layers are distinct: the external historical P0 suite (223 tests),
+the versioned P0 harness (`tests/python/test_p0_validation.py`, 6 tests) and
+the regular repository suite. The latter two are versioned; the historical
+suite and its ORCA/Multiwfn fixtures remain external. See
+`docs/LIMITATIONS.md` and `docs/PHASE13C5_PHASE02_FINALIZATION.md`.
+
 ## Memory layout
 
 All matrices are **column-major (Fortran order)** at the C ABI boundary.

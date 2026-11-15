@@ -1,0 +1,70 @@
+{
+  "root": "QE-Multiwfn-validation",
+  "description": "P0 external fixtures and historical references; data not redistributed",
+  "files": {
+    "orca/h2/sp.json": {
+      "sha256": "6c9359d3583f7401ba69e9be612d7722bcc01e3676a5f32867e184581d062265",
+      "size": 3544
+    },
+    "orca/h2/sp.out": {
+      "sha256": "1a23ccfaf87b843d073bbec4790b34474d0ca13da21bef799553c842915c0d1a",
+      "size": 85526
+    },
+    "orca/h2/sp.property.txt": {
+      "sha256": "ab0ebdfd211ab32057beab69d8c32650085722544b995fd363cdc7930055f22a",
+      "size": 8271
+    },
+    "orca/h2/sp.molden.input": {
+      "sha256": "976462844f6b95273d8f653d13ebe211a35dc26b1ae15cb3dfe4f0ccd6d9ebc8",
+      "size": 793
+    },
+    "qe_results/h2/mayer.npy": {
+      "sha256": "b795425211bd7c4ea759dca65ea1646b76a6b35b24d9ab7cddea7f7405125775",
+      "size": 160
+    },
+    "orca/h2o/sp.json": {
+      "sha256": "577315422aa955b0944c256bb73ee832dbba9084610c223d6c2a08427ff4d27b",
+      "size": 11815
+    },
+    "orca/h2o/sp.out": {
+      "sha256": "b3f2aa59a0b437286f6858cc4684131357d46d1c31ee7d4c4f7a771a6b3abb02",
+      "size": 141560
+    },
+    "orca/h2o/sp.property.txt": {
+      "sha256": "89851fb1331a6e5f5d15b0e6c953a67a813f75784c5a976df14b07aa5cebd796",
+      "size": 9169
+    },
+    "orca/h2o/sp.molden.input": {
+      "sha256": "bcda8a5a30284153a520935591513b78868072285cdd2caea887ab244648dbd5",
+      "size": 2766
+    },
+    "qe_results/h2o/mayer.npy": {
+      "sha256": "cf5f77b7a49f1407fb5a0e3e213e8bcf9af243eafa39b7cc66c018a8ed6da4c5",
+      "size": 200
+    },
+    "orca/benzene/sp.json": {
+      "sha256": "62bb77f36e7156cfcdb416fa97984d36cf87f560b0a904839fdc53fb6fb87ff6",
+      "size": 194788
+    },
+    "orca/benzene/sp.out": {
+      "sha256": "0d14a43ae26ce9875af81c8b60de8882c68c1e0d1330b91c14c39c3dd2d413cb",
+      "size": 175407
+    },
+    "orca/benzene/sp.property.txt": {
+      "sha256": "9024a73a187508b7d3873bdfeb924f52f773cf3ec4aa71e0ec8e7669fc299e8a",
+      "size": 18560
+    },
+    "orca/benzene/sp.molden.input": {
+      "sha256": "c401319dfaba150ded31f8945d5eba140e149d0d4af196bbbe9f9eabad7c58dd",
+      "size": 39337
+    },
+    "qe_results/benzene/mayer.npy": {
+      "sha256": "7b280901ce9e6167c293c498c04e1522dda22f7b0e01ce7b393fbff859888c0a",
+      "size": 1280
+    },
+    "comparisons/validation_results.json": {
+      "sha256": "6fb8b315c8d7d3911e8c020a8e1a22d0b2b8701f4a820cc1da66c25e11061f70",
+      "size": 58023
+    }
+  }
+}

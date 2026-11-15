@@ -29,8 +29,15 @@ _VALIDATION = _HERE.parents[3] / "QE-Multiwfn-validation"
 _ORCA = _VALIDATION / "orca"
 _FIX = _VALIDATION / "fixtures" / "cartesian" / "h2o_631gstar_cart"
 
-if not _ORCA.exists():
-    pytest.skip("fixtures unavailable", allow_module_level=True)
+requires_orca = pytest.mark.skipif(
+    not _ORCA.exists(), reason="fixtures unavailable"
+)
+requires_df = pytest.mark.skipif(
+    not (_ORCA / "df").exists(), reason="d/f fixtures unavailable"
+)
+requires_cartesian = pytest.mark.skipif(
+    not _FIX.exists(), reason="Cartesian fixture unavailable"
+)
 
 
 def test_schema_1_1_and_unit_normalization():
@@ -53,6 +60,7 @@ def test_schema_1_1_and_unit_normalization():
     assert abs(dxx / dxy - 1.0 / np.sqrt(3.0)) < 1e-12
 
 
+@requires_orca
 def test_contraction_self_overlap_known_shell():
     model = from_orca_directory(_ORCA / "h2")
     shell = model.basis.shells[0]
@@ -65,6 +73,7 @@ def test_contraction_self_overlap_known_shell():
     assert abs(model.matrices.S.data[0, 0] - 1.0) < 1e-10
 
 
+@requires_orca
 @pytest.mark.parametrize("mol", ["h2", "h2o", "benzene"])
 def test_orca_rhf_normalization_report(mol):
     model = from_orca_directory(_ORCA / mol)
@@ -78,6 +87,7 @@ def test_orca_rhf_normalization_report(mol):
         assert abs(ao.source_self_overlap - 1.0) < 1e-8
 
 
+@requires_df
 @pytest.mark.parametrize("mol", ["h2o_631gstar", "h2s_def2tzvp"])
 def test_orca_spherical_df_normalization(mol):
     model = from_orca_directory(_ORCA / "df" / mol)
@@ -90,6 +100,7 @@ def test_orca_spherical_df_normalization(mol):
             assert abs(ao.source_self_overlap - 1.0) < 1e-8
 
 
+@requires_orca
 def test_orca_uhf_rohf_normalization():
     for fn, d in ((from_orca_uhf_directory, "uhf"), (from_orca_rohf_directory, "rohf")):
         model = fn(_ORCA / d / f"o2_{d}_sto3g")
@@ -98,6 +109,7 @@ def test_orca_uhf_rohf_normalization():
         assert model.basis.normalization_convention == "cartesian_explicit"
 
 
+@requires_cartesian
 def test_cartesian_fixture_normalization_source_scaled():
     model = from_orca_directory(_FIX)
     rep = normalization_report(model)
@@ -133,6 +145,7 @@ def test_legacy_model_normalization_incomplete():
     assert normalization_report(model)["status"] == "INCOMPLETE"
 
 
+@requires_orca
 def test_sp_representation_equivalence():
     """s/p Cartesian and spherical functions are the same physical basis."""
     model = from_orca_directory(_ORCA / "h2")
@@ -156,6 +169,8 @@ def test_sp_representation_equivalence():
     np.testing.assert_allclose(sph, cart, atol=0.0, rtol=0.0)
 
 
+@requires_df
+@requires_cartesian
 def test_5d_6d_are_distinct_basis_sets():
     """5D and 6D d are different basis sets; no false equivalence is claimed."""
     sph = from_orca_directory(_ORCA / "df" / "h2o_631gstar")

@@ -115,6 +115,30 @@ Tested configuration: Ubuntu, GNU Fortran/GCC, CMake, OpenBLAS, Python 3.12,
 NumPy and pytest. Other compilers/BLAS implementations must be validated
 independently.
 
+## P0 validation fixtures and skipped tests
+
+The historical P0 validation suite (223 tests) and its ORCA/Multiwfn
+artifacts live in the external `QE-Multiwfn-validation` tree. They are not
+redistributed in this repository because their provenance/redistribution
+conditions have not been audited. The versioned protocol is
+`tests/python/test_p0_validation.py`, using the SHA-256 manifest
+`tests/python/p0_fixtures.json`; set `QE_P0_FIXTURES` to the external tree to
+execute it. Without fixtures the three system tests skip explicitly. The external P0
+pipeline now also requires `CoordinateUnits` and fails closed (13C.5).
+The external validation tree is not a Git repository and its
+`SHA256SUMS.txt` is stale relative to the 13C.5 changes; see
+`docs/PHASE13C5_1_PRECOMMIT_AUDIT.md`.
+
+The regular CI suite no longer uses module-level skips where independent unit
+tests exist. In the no-fixture simulation the build-test suite executes
+109 tests and skips 50; the optional-dependency job executes 114 and skips 46.
+The remaining skips are fixture-dependent (ORCA/Multiwfn datasets), not
+silent PASSes. Of the 115 test functions formerly hidden by 20 module-level
+skips, 14 are executable without external fixtures (11 without optional
+packages; 3 additional ASE tests with ASE installed) and 101 remain
+fixture-dependent. Hosted CI must be run after publication authorization; the
+local simulation is not a substitute.
+
 ## Historical documents
 
 The following are historical and not current status:

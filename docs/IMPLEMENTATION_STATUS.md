@@ -15,7 +15,8 @@ The 0.3.0 wheel/sdist have been produced and tested from an isolated environment
 
 | Area | Status | Evidence / notes |
 |---|---|---|
-| Legacy C ABI and lifecycle | PASS | 17 legacy symbols; CTest 6/6 |
+| Legacy C ABI and lifecycle | PASS | 17 legacy symbols; CTest 7/7 |
+| P0 validation protocol | PASS (local) | versioned H₂/H₂O/C₆H₆ harness; external fixtures via `QE_P0_FIXTURES`; 223 historical external |
 | RHF Mayer (`calcMayerbndord`) | PASS | P0 baseline bit-identical; QE × Multiwfn ≤ 4.98e-9 |
 | UHF / ROHF (opt-in) | PASS | O₂/STO-3G; `allow_open_shell=True`; α/β validated |
 | MDM 1.0/1.1 | IMPLEMENTED | schema 1.1.0; normalization metadata; provenance |
@@ -44,18 +45,20 @@ The 0.3.0 wheel/sdist have been produced and tested from an isolated environment
 
 | Suite | Result |
 |---|---|
-| Python | **233 passed, 1 warning** |
-| CTest | **6/6 passed** |
+| Python | **256 passed, 1 warning** (local, with external P0 fixtures) |
+| CTest | **7/7 passed** |
 | Clean build | **PASS** (`build_audit`, same library hash) |
 | Scientific flows | RHF/UHF/ROHF s/p/d/f **PASS**; Cartesian f not validated |
 | RHF baseline | S/P/Mayer bit-identical |
 | ABI symbols | 17 legacy + 27 additive = 44; no legacy removed |
+| CI simulation (13C.4) | 109 passed, 50 skipped (build-test, no external fixtures); optional-dependency job 114/46; hosted CI pending publication authorization |
 | `ldd -r` / RUNPATH | clean / `$ORIGIN` |
 
 Test breakdown: 121 MDM/M1 + 6 genP + 10 genSbas + 6 genPprim +
 10 full-flow/fail-closed + 2 cache-invalidation + 19 Phase 7C ORCA +
 6 Phase 8B native f + 4 Phase 8C open-shell f + 13 Phase 9B builder +
-12 Phase 9C/10 PySCF + 2 ASE + 4 database (plus 18 Phase 7B angular).
+12 Phase 9C/10 PySCF + 2 ASE + 4 database (plus 18 Phase 7B angular),
+10 unit-contract tests, 6 versioned P0 harness tests and 2 skip-inventory tests in 13C.4.
 
 ## Blocked / not implemented
 

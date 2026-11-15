@@ -10,7 +10,7 @@ subprocess.
 |---|---|---|---|---|---|---|---|---|
 | PySCF | live `Mole`/SCF | Bohr; explicit | RHF/UHF/ROHF; DFT/post-HF rejected | `_basis` + AO permutation | s/p/d raw contraction normalization; source-normalized full | direct and full | `PyscfAdapterError` | yes |
 | ASE | `Atoms` | Å → Bohr explicit | none (structural) | none | not applicable | none | `AseAdapterError` | PBC/absent electronic data |
-| ORCA | JSON/text files | source unit → Bohr | RHF/UHF/ROHF | shell/primitive/AO map | existing `attach_normalization` | direct/full | `OrcaAdapterError` | ECP/g-h/Cartesian-f unsupported |
+| ORCA | JSON/text files | required source unit → Bohr; missing/unknown fail-closed | RHF/UHF/ROHF | shell/primitive/AO map | existing `attach_normalization` | direct/full | `OrcaAdapterError` | ECP/g-h/Cartesian-f unsupported |
 | cclib | cclib object/file | Å → Bohr | RHF/UHF/ROHF synthetic | optional explicit basis | existing normalization | direct | `CclibAdapterError` | real ORCA 6.1.1 parser |
 | NumPy/builder | arrays/objects | explicit unit | RHF/UHF/ROHF | `BasisInput`/`ShellInput` | builder + `attach_normalization` | direct/full | `ValueError`/`QeIncompleteState` | yes |
 | DatabaseRecord | provider record | explicit unit | explicit method | source basis | builder | direct/full | `ValueError`/key errors | no record invention |

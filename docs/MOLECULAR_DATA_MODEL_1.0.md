@@ -830,10 +830,10 @@ Legenda: **U** = unitário, **I** = integração, **N** = negativo,
 
 | ID | Tipo | Teste | Critério |
 |---|---|---|---|
-| MDM-030 | S | `CᵀSC = I` | ≤ 1e−5 (fixtures ORCA) |
+| MDM-030 | S | `CᵀSC = I` | ≤ 1e−10 (fixtures ORCA) |
 | MDM-031 | S | `Tr(PS) = Ne` | ≤ 1e−8·escala |
 | MDM-032 | S | `PSP = 2P` (RHF) | ≤ 1e−6·escala |
-| MDM-033 | U | Simetria de S/P | ≤ 1e−8 |
+| MDM-033 | U | Simetria de S/P | ≤ 1e−10 |
 | MDM-034 | U | Positividade de S | autovalor mín. > 0 |
 | MDM-035 | N | Representação de C inconsistente | Rejeita |
 | MDM-036 | N | `occupations` somam Ne errado | Rejeita |

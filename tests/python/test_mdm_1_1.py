@@ -12,8 +12,9 @@ from qe_multiwfn.adapters.orca import (
 _HERE = Path(__file__).resolve()
 _VAL = _HERE.parents[3] / "QE-Multiwfn-validation"
 _ORCA = _VAL / "orca"
-if not _ORCA.exists():
-    pytest.skip("fixtures unavailable", allow_module_level=True)
+requires_orca = pytest.mark.skipif(
+    not _ORCA.exists(), reason="fixtures unavailable"
+)
 
 
 def _legacy_h2():
@@ -29,6 +30,7 @@ def _legacy_h2():
     )
 
 
+@requires_orca
 def test_schema_1_1_fields_and_summary():
     model = from_orca_directory(_ORCA / "h2o")
     assert model.schema_version == "1.1.0"
@@ -54,6 +56,7 @@ def test_legacy_roundtrip_still_bitwise():
     assert np.array_equal(back.overlap, ms.overlap)
 
 
+@requires_orca
 def test_mdm_components_present_for_rhf_uhf_rohf():
     for model in (
         from_orca_directory(_ORCA / "h2o"),

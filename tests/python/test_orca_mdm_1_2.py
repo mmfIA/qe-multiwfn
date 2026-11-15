@@ -14,8 +14,9 @@ _VAL = _HERE.parents[3] / "QE-Multiwfn-validation"
 _ORCA = _VAL / "orca"
 _H2S = _ORCA / "df" / "h2s_def2tzvp"
 _H2O_D = _ORCA / "df" / "h2o_631gstar"
-if not _VAL.exists():
-    pytest.skip("validation fixtures unavailable", allow_module_level=True)
+requires_orca = pytest.mark.skipif(
+    not _H2S.exists(), reason="validation fixtures unavailable"
+)
 
 
 def test_known_orca_f_convention_shape():
@@ -39,6 +40,7 @@ def test_phase_matrix_rejects_order_reordering():
                      target_order=(0, -1, 1, 2, -2, 3, -3))
 
 
+@requires_orca
 def test_orca_f_canonical_model_has_shell_metadata():
     can = from_orca_directory(_H2S, canonicalize_angular=True)
     assert can.schema_version == "1.2.0"
@@ -50,6 +52,7 @@ def test_orca_f_canonical_model_has_shell_metadata():
     assert can.basis.angular.state == "canonical"
 
 
+@requires_orca
 def test_orca_f_source_metadata_is_recorded():
     can = from_orca_directory(_H2S, canonicalize_angular=True)
     rec = can.provenance.angular_transforms[-1]
@@ -61,6 +64,7 @@ def test_orca_f_source_metadata_is_recorded():
     assert can.provenance.source_version == "6.1.1"
 
 
+@requires_orca
 def test_orca_d_canonical_model_has_identity_phase():
     can = from_orca_directory(_H2O_D, canonicalize_angular=True)
     dsh = [sh for sh in can.basis.shells if sh.l == 2]
@@ -71,6 +75,7 @@ def test_orca_d_canonical_model_has_identity_phase():
     assert can.schema_version == "1.2.0"
 
 
+@requires_orca
 def test_orca_canonical_does_not_mutate_source():
     src = from_orca_directory(_H2S)
     C0 = src.wavefunction.orbitals.coefficients.copy()

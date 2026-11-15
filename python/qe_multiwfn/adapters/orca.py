@@ -153,7 +153,9 @@ def _component_name(l: int, component: Optional[str]) -> str:
 
 def _unit_to_string(raw: Optional[str]) -> str:
     if raw is None:
-        return "angstrom"
+        raise OrcaAdapterError(
+            "ORCA sp.json is missing CoordinateUnits; refusing to infer a unit"
+        )
     u = str(raw).strip().lower()
     if u in ("angs", "angstrom", "angstroms", "a"):
         return "angstrom"

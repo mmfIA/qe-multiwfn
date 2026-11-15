@@ -18,6 +18,12 @@ and independently checked against PySCF standard real f cross-blocks. The
 source `sp.json` f coefficients and the ORCA-written Molden coefficients are
 identical for that fixture.
 
+## Coordinate units
+
+`CoordinateUnits` is required in `sp.json`. Missing or unknown units fail
+closed (no magnitude-based inference). Explicit `Angs` and `Bohr` are
+converted to the internal Bohr representation exactly once.
+
 ## What is not supported
 
 - ORCA versions other than 6.1.1 for f canonicalization. The adapter fails

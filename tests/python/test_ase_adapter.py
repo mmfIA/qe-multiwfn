@@ -10,16 +10,21 @@ from qe_multiwfn.normalization import normalization_report
 _HERE = Path(__file__).resolve()
 _VAL = _HERE.parents[3] / "QE-Multiwfn-validation"
 _ORCA = _VAL / "orca"
-if not _ORCA.exists():
-    pytest.skip("fixtures unavailable", allow_module_level=True)
-
+requires_orca = pytest.mark.skipif(
+    not _ORCA.exists(), reason="fixtures unavailable"
+)
 try:
     from ase.io import read as ase_read
 except Exception:
     ase_read = None
 
+requires_ase = pytest.mark.skipif(
+    ase_read is None, reason="ASE not installed"
+)
 
-@pytest.mark.skipif(ase_read is None, reason="ASE not installed")
+
+@requires_ase
+@requires_orca
 @pytest.mark.parametrize("mol", ["h2", "h2o", "benzene"])
 def test_ase_geometry_matches_orca(mol):
     atoms = ase_read(str(_ORCA / mol / "opt.xyz"))
@@ -33,6 +38,7 @@ def test_ase_geometry_matches_orca(mol):
     assert normalization_report(model)["status"] == "INCOMPLETE"
 
 
+@requires_ase
 def test_ase_geometry_only_cannot_run_mayer():
     from qe_multiwfn.adapters.ase import from_ase_atoms
     from ase.build import molecule
