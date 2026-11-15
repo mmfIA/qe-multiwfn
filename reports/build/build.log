@@ -1,0 +1,36 @@
+[1/36] Building Fortran preprocessed CMakeFiles/qe_bridge_objects.dir/src/bridge/qe_c_api.f90-pp.f90
+[2/36] Generating Fortran dyndep file CMakeFiles/qe_bridge_objects.dir/Fortran.dd
+[3/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/plot.f90.o
+[4/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/LSB.f90.o
+[5/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/GUI.f90.o
+[6/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/DOS.f90.o
+[7/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/sub.f90.o
+[8/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/0123dim.f90.o
+[9/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/orbcomp.f90.o
+[10/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/population.f90.o
+[11/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/spectrum.f90.o
+[12/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/topology.f90.o
+[13/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/ext/frj.f90.o
+[14/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/otherfunc.f90.o
+[15/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/otherfunc2.f90.o
+[16/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/excittrans.f90.o
+[17/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/procgriddata.f90.o
+[18/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/otherfunc3.f90.o
+[19/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/AdNDP.f90.o
+[20/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/surfana.f90.o
+[21/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/orbloc.f90.o
+[22/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/visweak.f90.o
+[23/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/basin.f90.o
+[24/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/grid.f90.o
+[25/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/fuzzy.f90.o
+[26/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/CDFT.f90.o
+[27/36] Building Fortran object CMakeFiles/qe_bridge_objects.dir/src/bridge/qe_c_api.f90.o
+[28/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/ETS_NOCV.f90.o
+[29/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/deloc_aromat.f90.o
+[30/36] Building Fortran object CMakeFiles/qe_multiwfn_objects.dir/vendor/Multiwfn_2026.11.3_src_Linux/hyper_polar.f90.o
+[31/36] Linking Fortran shared library libqe_multiwfn.so.0.1.0
+[32/36] Creating library symlink libqe_multiwfn.so.0 libqe_multiwfn.so
+[33/36] Linking C executable tests/test_lifecycle_c
+[34/36] Linking C executable tests/test_memory_transfer_c
+[35/36] Linking C executable tests/test_mayer_c
+[36/36] Linking C executable tests/test_error_handling_c

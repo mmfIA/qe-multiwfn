@@ -1,0 +1,86 @@
+name: qe-multiwfn-ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: System dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gfortran gcc cmake libopenblas-dev
+      - name: Python build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "setuptools>=68" wheel build pytest numpy
+      - name: Build wheel and sdist
+        run: python -m build --no-isolation --wheel --sdist --outdir dist
+      - name: Configure and build native tests
+        run: |
+          cmake -S . -B build_ci -G "Unix Makefiles" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_Fortran_COMPILER=gfortran \
+            -DCMAKE_C_COMPILER=gcc \
+            -DQE_STRICT_LEGACY=ON -DQE_BUILD_TESTS=ON
+          cmake --build build_ci --parallel 4
+      - name: CTest
+        run: (cd build_ci && ctest --output-on-failure)
+      - name: Python development suite
+        run: |
+          export PYTHONPATH="$PWD/python"
+          export QE_MULTIWFN_LIBRARY="$PWD/build_ci/libqe_multiwfn.so"
+          export LD_LIBRARY_PATH="$PWD/build_ci:${LD_LIBRARY_PATH:-}"
+          python -m pytest tests/python -q
+      - name: Isolated wheel install
+        run: |
+          python -m venv /tmp/qe-multiwfn-ci
+          /tmp/qe-multiwfn-ci/bin/python -m pip install --quiet --upgrade pip
+          /tmp/qe-multiwfn-ci/bin/python -m pip install --quiet numpy
+          /tmp/qe-multiwfn-ci/bin/python -m pip install --quiet --no-deps dist/*.whl
+      - name: Installed-package smoke test
+        run: |
+          cd /tmp
+          /tmp/qe-multiwfn-ci/bin/python "$GITHUB_WORKSPACE/tests/installed_smoke.py"
+
+  optional-full:
+    runs-on: ubuntu-latest
+    needs: build-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: System dependencies for native loading
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libopenblas-dev libgfortran5
+      - name: Python and build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "setuptools>=68" wheel build numpy
+      - name: Build wheel
+        run: python -m build --no-isolation --wheel --outdir dist
+      - name: Install package and optional transitives
+        run: |
+          python -m pip install dist/*.whl
+          python -m pip install pyscf==2.15.0 ase==3.29.0 cclib==1.8.1
+      - name: Optional import check
+        run: |
+          python - <<'PY'
+          import qe_multiwfn
+          from qe_multiwfn.adapters.pyscf import from_pyscf
+          from qe_multiwfn.adapters.ase import from_ase_atoms
+          from qe_multiwfn.adapters.cclib import CclibAdapterError, from_cclib_data
+          print(qe_multiwfn.__version__)
+          PY

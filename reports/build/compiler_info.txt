@@ -1,0 +1,13 @@
+===== CMake =====
+cmake version 4.4.5
+
+===== Fortran compiler =====
+GNU Fortran (conda-forge gcc 16.2.0-7) 16.2.0
+Copyright (C) 2026 Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.  There is NO
+
+===== C compiler =====
+gcc (conda-forge gcc 16.2.0-7) 16.2.0
+
+===== BLAS =====
+(system BLAS)

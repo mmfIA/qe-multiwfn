@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qe-multiwfn"
+version = "0.3.0"
+description = "Native Multiwfn scientific routines exposed as a Python library"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["numpy>=2.0"]
+authors = [{name = "QE-Multiwfn contributors"}]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Fortran",
+  "Operating System :: POSIX :: Linux",
+  "Topic :: Scientific/Engineering :: Chemistry",
+]
+
+[project.optional-dependencies]
+pyscf = ["pyscf>=2.14,<2.16"]
+ase = ["ase>=3.28,<3.30"]
+cclib = ["cclib==1.8.1"]
+full = ["pyscf>=2.14,<2.16", "ase>=3.28,<3.30", "cclib==1.8.1"]
+
+[tool.setuptools]
+package-dir = {"" = "python"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["python"]
+include = ["qe_multiwfn*"]
+
+[tool.setuptools.package-data]
+qe_multiwfn = ["libqe_multiwfn.so"]
+

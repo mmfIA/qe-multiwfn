@@ -1,0 +1,19 @@
+-- QE Fortran: RELEASE flags -O2
+-- BLAS: found via find_package(BLAS): /usr/lib/x86_64-linux-gnu/libblas.so
+-- BLAS libraries used by QE-Multiwfn: /usr/lib/x86_64-linux-gnu/libblas.so
+-- Multiwfn dependency-closure sources in library: 3 files
+-- 
+-- ================ QE-Multiwfn ================
+--   Version            : 0.1.1
+--   Build type         : Release
+--   Fortran compiler   : /usr/bin/f95
+--   Fortran flags      : -cpp;-Wno-cpp;-fPIC;-std=legacy;-fallow-argument-mismatch;-ffree-line-length-none;-std=legacy;-O2;-Wno-align-commons;-Wno-unused-dummy-argument;-Wno-conversion
+--   BLAS libraries     : /usr/lib/x86_64-linux-gnu/libblas.so
+--   Multiwfn sources   : 3 files
+--   Module output dir  : /mnt/data/work_qe/qe-multiwfn/build/mod
+--   Shared library     : libqe_multiwfn.so
+-- =============================================
+-- 
+-- Configuring done (0.1s)
+-- Generating done (0.0s)
+-- Build files have been written to: /mnt/data/work_qe/qe-multiwfn/build

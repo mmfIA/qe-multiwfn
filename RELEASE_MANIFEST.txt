@@ -1,0 +1,10 @@
+QE-Multiwfn 0.1.1
+Built in ChatGPT sandbox on 2026-11-09.
+Fortran compiler: GNU Fortran 14.2.0
+CMake: 3.31.6
+BLAS: system BLAS
+LAPACK: system LAPACK
+Tests: 4/4 CTest, 29/29 pytest
+Examples: 3/3 executed successfully
+Upstream vendor integrity: 74/74 SHA-256 matches against supplied original ZIP.
+Scientific caveat: nprims=6 / nbasis=2 is a dimension-contract regression, not an external H2/STO-3G SCF validation.

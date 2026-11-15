@@ -1,0 +1,67 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Python packaging / generated metadata
+*.egg-info/
+*.egg
+pip-wheel-metadata/
+.eggs/
+/build/
+/dist/
+
+# CMake and native build trees
+/build_audit/
+/build_ci/
+BUILD/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+install_manifest.txt
+Testing/
+*.o
+*.obj
+*.mod
+*.smod
+*.a
+*.lib
+*.dll
+*.dylib
+*.pdb
+
+# Organization-specific validated distributions are tracked intentionally:
+# dist-phase11/ and dist-phase12/ are NOT ignored.
+
+# Editors and OS files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Virtual environments / local toolchains
+.venv/
+venv/
+env/
+tools/qe-env/
+.python-version
+
+# Local scratch/logs (historical reports/checkpoints/docs are not ignored)
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+*.pid
+core
+core.*

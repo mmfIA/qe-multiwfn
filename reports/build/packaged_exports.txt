@@ -1,0 +1,17 @@
+qe_begin_system@@QE_MULTIWFN_0.1.1
+qe_calculate_mayer@@QE_MULTIWFN_0.1.1
+qe_finalize@@QE_MULTIWFN_0.1.1
+qe_get_engine_state@@QE_MULTIWFN_0.1.1
+qe_get_last_error@@QE_MULTIWFN_0.1.1
+qe_get_mayer_dimensions@@QE_MULTIWFN_0.1.1
+qe_get_mayer_metadata@@QE_MULTIWFN_0.1.1
+qe_get_mayer_result@@QE_MULTIWFN_0.1.1
+qe_get_version@@QE_MULTIWFN_0.1.1
+qe_initialize@@QE_MULTIWFN_0.1.1
+qe_prepare_system@@QE_MULTIWFN_0.1.1
+qe_release_system@@QE_MULTIWFN_0.1.1
+qe_set_atomic_data@@QE_MULTIWFN_0.1.1
+qe_set_basis_data@@QE_MULTIWFN_0.1.1
+qe_set_density@@QE_MULTIWFN_0.1.1
+qe_set_electronic_metadata@@QE_MULTIWFN_0.1.1
+qe_set_overlap@@QE_MULTIWFN_0.1.1

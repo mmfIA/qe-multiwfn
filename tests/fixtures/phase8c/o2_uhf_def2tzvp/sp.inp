@@ -1,0 +1,20 @@
+! UHF def2-TZVP TightSCF KeepInts
+%output
+  Print[ P_Overlap ] 1
+  Print[ P_MOs ] 1
+end
+
+%pal
+  nprocs 2
+end
+
+%maxcore 2000
+
+%scf
+  MaxIter 300
+end
+
+* xyz 0 3
+O      0.00000000     0.00000000     0.00000000
+O      0.00000000     0.00000000     1.20700000
+*

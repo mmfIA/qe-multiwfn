@@ -1,0 +1,42 @@
+QE-Multiwfn 0.2.0
+=================
+
+Release date: 2026-11-14
+Build host: Ubuntu 26.04.1 x86-64
+Toolchain: GNU Fortran/GCC 15.2.0, CMake 4.2.3, OpenBLAS, Python 3.12.16,
+NumPy 2.5.4, pytest 9.2.0.
+Artifact: libqe_multiwfn.so.0.2.0
+Artifact SHA-256: ecc7852a74dd4756735e5db586e48b1c4e41746260f2e3cdfd935d1a7fe36a76
+
+Highlights
+- Backward-compatible 0.1.1 ABI: 17 original qe_* symbols unchanged
+  (version node QE_MULTIWFN_0.1.1).
+- Additive Molecular Data Model 1.0 ABI: 12 qe_v1_* symbols
+  (version node QE_MULTIWFN_0.2.0).
+- ORCA 6.1.1 JSON adapter for RHF/UHF/ROHF with s/p, spherical d/f and
+  Cartesian d/f support (Cartesian validated with a PySCF-generated fixture).
+- Canonical model with shells, primitives, exponents, contraction
+  coefficients, AO map, provenance and strict validation.
+- Opt-in UHF/ROHF execution; ROHF validated against Multiwfn and ORCA.
+- P0 RHF results preserved: H2/H2O/C6H6 Mayer matrices bit-for-bit.
+
+Tests
+- CTest 6/6.
+- Python 91/91 (29 legacy + 24 model + 26 ORCA/d-f + 5 UHF + 4 ROHF +
+  3 Cartesian).
+- Validation pipeline 223/223.
+- Examples 3/3.
+- Upstream Multiwfn vendor: 74/74 files byte-identical.
+
+Not implemented (honest scope)
+- Post-HF wfntype 3/4 execution.
+- PBC execution.
+- ECP/EDF execution.
+- genP/genSbas_curr inside the library (adapters supply S/P).
+- Analyses other than Mayer.
+- Multiple simultaneous engines / thread safety.
+
+Validation evidence
+- P0 operational report: QE-Multiwfn-validation/reports/P0_OPERATIONAL_VERIFICATION.md
+- M1 implementation report: docs/M1_IMPLEMENTATION_REPORT.md
+- M1 work directory: M1_work_20261114_160216/

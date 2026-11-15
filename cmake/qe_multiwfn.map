@@ -1,0 +1,28 @@
+/* Legacy 0.1.1 ABI: unchanged symbols and semantics. */
+QE_MULTIWFN_0.1.1 {
+    global:
+        qe_initialize;
+        qe_finalize;
+        qe_get_engine_state;
+        qe_get_last_error;
+        qe_begin_system;
+        qe_set_atomic_data;
+        qe_set_electronic_metadata;
+        qe_set_basis_data;
+        qe_set_density;
+        qe_set_overlap;
+        qe_prepare_system;
+        qe_release_system;
+        qe_calculate_mayer;
+        qe_get_mayer_dimensions;
+        qe_get_mayer_metadata;
+        qe_get_mayer_result;
+        qe_get_version;
+};
+
+/* Additive Molecular Data Model 1.0 / UHF-ROHF ABI. */
+QE_MULTIWFN_0.2.0 {
+    global:
+        qe_v1_*;
+        local: *;
+} QE_MULTIWFN_0.1.1;
