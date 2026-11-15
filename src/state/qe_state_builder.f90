@@ -22,6 +22,7 @@ module qe_state_builder
     use qe_error_handler
     use qe_engine_state, only: qe_open_shell_get
     use qe_memory
+    use qe_limits
     use qe_analysis_state, only: qe_result_clear
     use defvar, only: ncenter, nbasis, nprims, wfntype, &
                      a, basstart, basend, &
@@ -47,6 +48,7 @@ module qe_state_builder
     public :: qe_state_set_angular_canonical
     public :: qe_state_set_orbitals
     public :: qe_state_get_readiness
+    public :: qe_state_get_ncenter
     public :: qe_state_prepare
     public :: qe_state_release
 
@@ -59,6 +61,8 @@ contains
             result(status)
         integer(c_int), value :: ncenter_, nbasis_, nprims_, wfntype_
         integer(c_int) :: status
+        integer :: istat
+        logical :: ok
 
         call qe_clear_error()
 
@@ -77,6 +81,22 @@ contains
                               "nprims must be >= nbasis")
             status = QE_ERROR_INVALID_DIMENSION; return
         end if
+        ! Check every dimension and every size product BEFORE any allocation.
+        ok = qe_check_dimension(ncenter_, "ncenter", "qe_begin_system", status)
+        if (.not. ok) return
+        ok = qe_check_dimension(nbasis_, "nbasis", "qe_begin_system", status)
+        if (.not. ok) return
+        ok = qe_check_dimension(nprims_, "nprims", "qe_begin_system", status)
+        if (.not. ok) return
+        ok = qe_check_product(nbasis_, nbasis_, "nbasis*nbasis", &
+                              "qe_begin_system", status)
+        if (.not. ok) return
+        ok = qe_check_product(ncenter_, ncenter_, "ncenter*ncenter", &
+                              "qe_begin_system", status)
+        if (.not. ok) return
+        ok = qe_check_product(3_c_int, ncenter_, "3*ncenter", &
+                              "qe_begin_system", status)
+        if (.not. ok) return
         if (wfntype_ < 0 .or. wfntype_ > 4) then
             call qe_set_error(QE_ERROR_UNSUPPORTED, "qe_begin_system", &
                               "wfntype must be in [0,4]")
@@ -113,31 +133,71 @@ contains
         the_mol%nprims  = nprims_
         the_mol%wfntype = wfntype_
 
-        allocate(the_mol%atomic_numbers(ncenter_))
-        allocate(the_mol%coordinates(3, ncenter_))
+        allocate(the_mol%atomic_numbers(ncenter_), stat=istat)
+        if (istat /= 0) then
+            call qe_begin_alloc_fail("atomic_numbers")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(the_mol%coordinates(3, ncenter_), stat=istat)
+        if (istat /= 0) then
+            call qe_begin_alloc_fail("coordinates")
+            status = QE_ERROR_ALLOCATION; return
+        end if
         the_mol%atomic_numbers = 0
         the_mol%coordinates = 0.0_c_double
 
-        allocate(the_mol%basis_center(nbasis_))
-        allocate(the_mol%basis_type(nbasis_))
+        allocate(the_mol%basis_center(nbasis_), stat=istat)
+        if (istat /= 0) then
+            call qe_begin_alloc_fail("basis_center")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(the_mol%basis_type(nbasis_), stat=istat)
+        if (istat /= 0) then
+            call qe_begin_alloc_fail("basis_type")
+            status = QE_ERROR_ALLOCATION; return
+        end if
         the_mol%basis_center = 0
         the_mol%basis_type = 0
 
-        allocate(the_mol%density_total(nbasis_, nbasis_))
+        allocate(the_mol%density_total(nbasis_, nbasis_), stat=istat)
+        if (istat /= 0) then
+            call qe_begin_alloc_fail("density_total")
+            status = QE_ERROR_ALLOCATION; return
+        end if
         the_mol%density_total = 0.0_c_double
 
         if (wfntype_ == 1 .or. wfntype_ == 2 .or. wfntype_ == 4) then
-            allocate(the_mol%density_alpha(nbasis_, nbasis_))
-            allocate(the_mol%density_beta(nbasis_, nbasis_))
+            allocate(the_mol%density_alpha(nbasis_, nbasis_), stat=istat)
+            if (istat /= 0) then
+                call qe_begin_alloc_fail("density_alpha")
+                status = QE_ERROR_ALLOCATION; return
+            end if
+            allocate(the_mol%density_beta(nbasis_, nbasis_), stat=istat)
+            if (istat /= 0) then
+                call qe_begin_alloc_fail("density_beta")
+                status = QE_ERROR_ALLOCATION; return
+            end if
             the_mol%density_alpha = 0.0_c_double
             the_mol%density_beta  = 0.0_c_double
         end if
 
-        allocate(the_mol%overlap(nbasis_, nbasis_))
+        allocate(the_mol%overlap(nbasis_, nbasis_), stat=istat)
+        if (istat /= 0) then
+            call qe_begin_alloc_fail("overlap")
+            status = QE_ERROR_ALLOCATION; return
+        end if
         the_mol%overlap = 0.0_c_double
 
-        allocate(the_mol%basstart(ncenter_))
-        allocate(the_mol%basend(ncenter_))
+        allocate(the_mol%basstart(ncenter_), stat=istat)
+        if (istat /= 0) then
+            call qe_begin_alloc_fail("basstart")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(the_mol%basend(ncenter_), stat=istat)
+        if (istat /= 0) then
+            call qe_begin_alloc_fail("basend")
+            status = QE_ERROR_ALLOCATION; return
+        end if
         the_mol%basstart = 0
         the_mol%basend   = 0
 
@@ -389,9 +449,12 @@ contains
         type(c_ptr), value    :: center_ptr, l_ptr, ps_ptr, pe_ptr, cart_ptr
         integer(c_int) :: status
         integer(c_int), pointer :: center(:), l(:), ps(:), pe(:), cart(:)
+        integer(c_int), allocatable :: center_tmp(:), l_tmp(:), prim_start_tmp(:)
+        integer(c_int), allocatable :: prim_end_tmp(:), cart_tmp(:)
         logical :: ok
-        integer :: i
+        integer :: i, istat
 
+        if (.not. qe_check_dimension(nshell, "nshell", "qe_set_shells", status)) return
         if (nshell <= 0) then
             call qe_set_error(QE_ERROR_INVALID_DIMENSION, "qe_set_shells", &
                               "nshell must be positive")
@@ -426,19 +489,45 @@ contains
             end if
         end do
 
-        if (allocated(the_mol%shell_center)) deallocate(the_mol%shell_center)
-        if (allocated(the_mol%shell_l)) deallocate(the_mol%shell_l)
-        if (allocated(the_mol%shell_prim_start)) deallocate(the_mol%shell_prim_start)
-        if (allocated(the_mol%shell_prim_end)) deallocate(the_mol%shell_prim_end)
-        if (allocated(the_mol%shell_cartesian)) deallocate(the_mol%shell_cartesian)
-        allocate(the_mol%shell_center(nshell), the_mol%shell_l(nshell), &
-                 the_mol%shell_prim_start(nshell), the_mol%shell_prim_end(nshell), &
-                 the_mol%shell_cartesian(nshell))
-        the_mol%shell_center = center
-        the_mol%shell_l = l
-        the_mol%shell_prim_start = ps
-        the_mol%shell_prim_end = pe
-        the_mol%shell_cartesian = cart
+        allocate(center_tmp(nshell), stat=istat)
+        if (istat /= 0) then
+            call qe_set_allocation_error("qe_set_shells", "shell_center")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(l_tmp(nshell), stat=istat)
+        if (istat /= 0) then
+            deallocate(center_tmp)
+            call qe_set_allocation_error("qe_set_shells", "shell_l")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(prim_start_tmp(nshell), stat=istat)
+        if (istat /= 0) then
+            deallocate(center_tmp, l_tmp)
+            call qe_set_allocation_error("qe_set_shells", "shell_prim_start")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(prim_end_tmp(nshell), stat=istat)
+        if (istat /= 0) then
+            deallocate(center_tmp, l_tmp, prim_start_tmp)
+            call qe_set_allocation_error("qe_set_shells", "shell_prim_end")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(cart_tmp(nshell), stat=istat)
+        if (istat /= 0) then
+            deallocate(center_tmp, l_tmp, prim_start_tmp, prim_end_tmp)
+            call qe_set_allocation_error("qe_set_shells", "shell_cartesian")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        center_tmp = center
+        l_tmp = l
+        prim_start_tmp = ps
+        prim_end_tmp = pe
+        cart_tmp = cart
+        call move_alloc(center_tmp, the_mol%shell_center)
+        call move_alloc(l_tmp, the_mol%shell_l)
+        call move_alloc(prim_start_tmp, the_mol%shell_prim_start)
+        call move_alloc(prim_end_tmp, the_mol%shell_prim_end)
+        call move_alloc(cart_tmp, the_mol%shell_cartesian)
         the_mol%nshell = nshell
         the_mol%has_shells = .true.
         status = QE_SUCCESS
@@ -455,8 +544,10 @@ contains
         integer(c_int) :: status
         integer(c_int), pointer :: center(:), type_(:), shell(:)
         real(c_double), pointer :: expo(:), coeff(:), norm(:)
+        integer(c_int), allocatable :: center_tmp(:), type_tmp(:), shell_tmp(:)
+        real(c_double), allocatable :: expo_tmp(:), coeff_tmp(:), norm_tmp(:)
         logical :: ok, has_norm, has_shell
-        integer :: i
+        integer :: i, istat
 
         if (nprims /= the_mol%nprims) then
             call qe_set_error(QE_ERROR_INVALID_DIMENSION, "qe_set_primitives", &
@@ -500,29 +591,61 @@ contains
             end if
         end do
 
-        if (allocated(the_mol%prim_center)) deallocate(the_mol%prim_center)
-        if (allocated(the_mol%prim_type)) deallocate(the_mol%prim_type)
-        if (allocated(the_mol%prim_shell)) deallocate(the_mol%prim_shell)
-        if (allocated(the_mol%prim_exponent)) deallocate(the_mol%prim_exponent)
-        if (allocated(the_mol%prim_coefficient)) deallocate(the_mol%prim_coefficient)
-        if (allocated(the_mol%prim_normalization)) deallocate(the_mol%prim_normalization)
-        allocate(the_mol%prim_center(nprims), the_mol%prim_type(nprims), &
-                 the_mol%prim_shell(nprims), the_mol%prim_exponent(nprims), &
-                 the_mol%prim_coefficient(nprims), the_mol%prim_normalization(nprims))
-        the_mol%prim_center = center
-        the_mol%prim_type = type_
-        the_mol%prim_exponent = expo
-        the_mol%prim_coefficient = coeff
+        allocate(center_tmp(nprims), stat=istat)
+        if (istat /= 0) then
+            call qe_set_allocation_error("qe_set_primitives", "prim_center")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(type_tmp(nprims), stat=istat)
+        if (istat /= 0) then
+            deallocate(center_tmp)
+            call qe_set_allocation_error("qe_set_primitives", "prim_type")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(shell_tmp(nprims), stat=istat)
+        if (istat /= 0) then
+            deallocate(center_tmp, type_tmp)
+            call qe_set_allocation_error("qe_set_primitives", "prim_shell")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(expo_tmp(nprims), stat=istat)
+        if (istat /= 0) then
+            deallocate(center_tmp, type_tmp, shell_tmp)
+            call qe_set_allocation_error("qe_set_primitives", "prim_exponent")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(coeff_tmp(nprims), stat=istat)
+        if (istat /= 0) then
+            deallocate(center_tmp, type_tmp, shell_tmp, expo_tmp)
+            call qe_set_allocation_error("qe_set_primitives", "prim_coefficient")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(norm_tmp(nprims), stat=istat)
+        if (istat /= 0) then
+            deallocate(center_tmp, type_tmp, shell_tmp, expo_tmp, coeff_tmp)
+            call qe_set_allocation_error("qe_set_primitives", "prim_normalization")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        center_tmp = center
+        type_tmp = type_
+        expo_tmp = expo
+        coeff_tmp = coeff
         if (has_norm) then
-            the_mol%prim_normalization = norm
+            norm_tmp = norm
         else
-            the_mol%prim_normalization = 1.0_c_double
+            norm_tmp = 1.0_c_double
         end if
         if (has_shell) then
-            the_mol%prim_shell = shell
+            shell_tmp = shell
         else
-            the_mol%prim_shell = 0
+            shell_tmp = 0
         end if
+        call move_alloc(center_tmp, the_mol%prim_center)
+        call move_alloc(type_tmp, the_mol%prim_type)
+        call move_alloc(shell_tmp, the_mol%prim_shell)
+        call move_alloc(expo_tmp, the_mol%prim_exponent)
+        call move_alloc(coeff_tmp, the_mol%prim_coefficient)
+        call move_alloc(norm_tmp, the_mol%prim_normalization)
         the_mol%has_primitives = .true.
         status = QE_SUCCESS
     end function qe_state_set_primitives
@@ -538,8 +661,9 @@ contains
         type(c_ptr), value    :: center_ptr, shell_ptr, mtype_ptr, atype_ptr, source_ptr
         integer(c_int) :: status
         integer(c_int), pointer :: center(:), shell(:), mtype(:), atype(:), source(:)
+        integer(c_int), allocatable :: shell_tmp(:), mtype_tmp(:), atype_tmp(:), source_tmp(:)
         logical :: ok
-        integer :: i
+        integer :: i, istat
 
         if (nbasis /= the_mol%nbasis) then
             call qe_set_error(QE_ERROR_INVALID_DIMENSION, "qe_set_ao_map", &
@@ -578,28 +702,49 @@ contains
             end if
         end do
 
-        if (allocated(the_mol%ao_shell)) deallocate(the_mol%ao_shell)
-        if (allocated(the_mol%ao_multiwfn_type)) deallocate(the_mol%ao_multiwfn_type)
-        if (allocated(the_mol%ao_angular_type)) deallocate(the_mol%ao_angular_type)
-        if (allocated(the_mol%ao_source_index)) deallocate(the_mol%ao_source_index)
-        allocate(the_mol%ao_shell(nbasis), the_mol%ao_multiwfn_type(nbasis), &
-                 the_mol%ao_angular_type(nbasis), the_mol%ao_source_index(nbasis))
+        allocate(shell_tmp(nbasis), stat=istat)
+        if (istat /= 0) then
+            call qe_set_allocation_error("qe_set_ao_map", "ao_shell")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(mtype_tmp(nbasis), stat=istat)
+        if (istat /= 0) then
+            deallocate(shell_tmp)
+            call qe_set_allocation_error("qe_set_ao_map", "ao_multiwfn_type")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(atype_tmp(nbasis), stat=istat)
+        if (istat /= 0) then
+            deallocate(shell_tmp, mtype_tmp)
+            call qe_set_allocation_error("qe_set_ao_map", "ao_angular_type")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(source_tmp(nbasis), stat=istat)
+        if (istat /= 0) then
+            deallocate(shell_tmp, mtype_tmp, atype_tmp)
+            call qe_set_allocation_error("qe_set_ao_map", "ao_source_index")
+            status = QE_ERROR_ALLOCATION; return
+        end if
         if (c_associated(shell_ptr)) then
-            the_mol%ao_shell = shell
+            shell_tmp = shell
         else
-            the_mol%ao_shell = 0
+            shell_tmp = 0
         end if
         if (c_associated(mtype_ptr)) then
-            the_mol%ao_multiwfn_type = mtype
+            mtype_tmp = mtype
         else
-            the_mol%ao_multiwfn_type = 0
+            mtype_tmp = 0
         end if
         if (c_associated(source_ptr)) then
-            the_mol%ao_source_index = source
+            source_tmp = source
         else
-            the_mol%ao_source_index = 0
+            source_tmp = 0
         end if
-        the_mol%ao_angular_type = atype
+        atype_tmp = atype
+        call move_alloc(shell_tmp, the_mol%ao_shell)
+        call move_alloc(mtype_tmp, the_mol%ao_multiwfn_type)
+        call move_alloc(atype_tmp, the_mol%ao_angular_type)
+        call move_alloc(source_tmp, the_mol%ao_source_index)
 
         ! The legacy Mayer path consumes basis_center/basis_type; fill them
         ! from the authoritative v1 AO map.
@@ -621,8 +766,10 @@ contains
         integer(c_int) :: status
         real(c_double), pointer :: self_overlap(:), contraction(:)
         integer(c_int), pointer :: convention(:)
+        real(c_double), allocatable :: self_tmp(:), contraction_tmp(:)
+        integer(c_int), allocatable :: convention_tmp(:)
         logical :: ok
-        integer :: i
+        integer :: i, istat
 
         if (nbasis /= the_mol%nbasis) then
             call qe_set_error(QE_ERROR_INVALID_DIMENSION, "qe_set_ao_normalization", &
@@ -651,15 +798,29 @@ contains
                 status = QE_ERROR_INVALID_ARGUMENT; return
             end if
         end do
-        if (allocated(the_mol%ao_source_self_overlap)) deallocate(the_mol%ao_source_self_overlap)
-        if (allocated(the_mol%ao_contraction_norm)) deallocate(the_mol%ao_contraction_norm)
-        if (allocated(the_mol%ao_normalization_convention)) deallocate(the_mol%ao_normalization_convention)
-        allocate(the_mol%ao_source_self_overlap(nbasis))
-        allocate(the_mol%ao_contraction_norm(nbasis))
-        allocate(the_mol%ao_normalization_convention(nbasis))
-        the_mol%ao_source_self_overlap = self_overlap
-        the_mol%ao_contraction_norm = contraction
-        the_mol%ao_normalization_convention = convention
+        allocate(self_tmp(nbasis), stat=istat)
+        if (istat /= 0) then
+            call qe_set_allocation_error("qe_set_ao_normalization", "source_self_overlap")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(contraction_tmp(nbasis), stat=istat)
+        if (istat /= 0) then
+            deallocate(self_tmp)
+            call qe_set_allocation_error("qe_set_ao_normalization", "contraction_normalization")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(convention_tmp(nbasis), stat=istat)
+        if (istat /= 0) then
+            deallocate(self_tmp, contraction_tmp)
+            call qe_set_allocation_error("qe_set_ao_normalization", "normalization_convention")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        self_tmp = self_overlap
+        contraction_tmp = contraction
+        convention_tmp = convention
+        call move_alloc(self_tmp, the_mol%ao_source_self_overlap)
+        call move_alloc(contraction_tmp, the_mol%ao_contraction_norm)
+        call move_alloc(convention_tmp, the_mol%ao_normalization_convention)
         the_mol%has_ao_normalization = .true.
         status = QE_SUCCESS
     end function qe_state_set_ao_normalization
@@ -695,9 +856,14 @@ contains
         integer(c_int) :: status
         real(c_double), pointer :: coeff(:,:), ene(:), occ(:)
         integer(c_int), pointer :: spin(:)
+        real(c_double), allocatable :: coeff_tmp(:,:), ene_tmp(:), occ_tmp(:)
+        integer(c_int), allocatable :: spin_tmp(:)
         logical :: ok
-        integer :: i, m, n
+        integer :: i, istat
+        integer(c_int) :: m, n
 
+        if (.not. qe_check_dimension(nmo, "nmo", "qe_set_orbitals", status)) return
+        if (.not. qe_check_dimension(ncoeff, "ncoeff", "qe_set_orbitals", status)) return
         if (nmo <= 0) then
             call qe_set_error(QE_ERROR_INVALID_DIMENSION, "qe_set_orbitals", &
                               "nmo must be positive")
@@ -732,6 +898,7 @@ contains
         else
             m = ncoeff; n = nmo
         end if
+        if (.not. qe_check_product(m, n, "nmo*ncoeff", "qe_set_orbitals", status)) return
         ok = qe_pointer_to_real2d(coeff_ptr, m, n, coeff, status); if (.not. ok) return
         ok = qe_pointer_to_real1d(ene_ptr, nmo, ene, status); if (.not. ok) return
         ok = qe_pointer_to_real1d(occ_ptr, nmo, occ, status); if (.not. ok) return
@@ -752,18 +919,37 @@ contains
             end if
         end do
 
-        if (allocated(the_mol%orb_coefficients)) deallocate(the_mol%orb_coefficients)
-        if (allocated(the_mol%orb_energies)) deallocate(the_mol%orb_energies)
-        if (allocated(the_mol%orb_occupations)) deallocate(the_mol%orb_occupations)
-        if (allocated(the_mol%orb_spin)) deallocate(the_mol%orb_spin)
-        allocate(the_mol%orb_coefficients(m, n))
-        allocate(the_mol%orb_energies(nmo))
-        allocate(the_mol%orb_occupations(nmo))
-        allocate(the_mol%orb_spin(nmo))
-        the_mol%orb_coefficients = coeff
-        the_mol%orb_energies = ene
-        the_mol%orb_occupations = occ
-        the_mol%orb_spin = spin
+        allocate(coeff_tmp(m, n), stat=istat)
+        if (istat /= 0) then
+            call qe_set_allocation_error("qe_set_orbitals", "orb_coefficients")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(ene_tmp(nmo), stat=istat)
+        if (istat /= 0) then
+            deallocate(coeff_tmp)
+            call qe_set_allocation_error("qe_set_orbitals", "orb_energies")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(occ_tmp(nmo), stat=istat)
+        if (istat /= 0) then
+            deallocate(coeff_tmp, ene_tmp)
+            call qe_set_allocation_error("qe_set_orbitals", "orb_occupations")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(spin_tmp(nmo), stat=istat)
+        if (istat /= 0) then
+            deallocate(coeff_tmp, ene_tmp, occ_tmp)
+            call qe_set_allocation_error("qe_set_orbitals", "orb_spin")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        coeff_tmp = coeff
+        ene_tmp = ene
+        occ_tmp = occ
+        spin_tmp = spin
+        call move_alloc(coeff_tmp, the_mol%orb_coefficients)
+        call move_alloc(ene_tmp, the_mol%orb_energies)
+        call move_alloc(occ_tmp, the_mol%orb_occupations)
+        call move_alloc(spin_tmp, the_mol%orb_spin)
         the_mol%nmo_v1 = nmo
         the_mol%orb_coefficient_representation = repr
         the_mol%orb_coefficient_layout = layout
@@ -796,7 +982,8 @@ contains
     !-----------------------------------------------------------------
     function qe_state_prepare() result(status)
         integer(c_int) :: status
-        integer :: i
+        integer :: i, istat
+        logical :: ok
         real(c_double) :: trPS, nelec_check, idempotency_error, density_scale
         real(c_double) :: trPSa, trPSb, na_check, nb_check, uhf_error, uhf_scale
         real(c_double), allocatable :: psp(:,:)
@@ -858,7 +1045,13 @@ contains
         ! symmetric matrices that happen to have the right trace but are
         ! not valid idempotent RHF density matrices.
         if (the_mol%wfntype == 0) then
-            allocate(psp(the_mol%nbasis, the_mol%nbasis))
+            if (.not. qe_check_product(the_mol%nbasis, the_mol%nbasis, &
+                                       "nbasis*nbasis", "qe_prepare_system", status)) return
+            allocate(psp(the_mol%nbasis, the_mol%nbasis), stat=istat)
+            if (istat /= 0) then
+                call qe_set_allocation_error("qe_prepare_system", "idempotency scratch")
+                status = QE_ERROR_ALLOCATION; return
+            end if
             psp = matmul(matmul(the_mol%density_total, the_mol%overlap), &
                          the_mol%density_total)
             idempotency_error = maxval(abs(psp - 2.0_c_double * the_mol%density_total))
@@ -895,7 +1088,12 @@ contains
         ! --- Allocate and fill a(:) (atomtype) ---
         ! Multiwfn's atomtype has fields: name, index, x, y, z, charge, resid, resname
         if (allocated(a)) deallocate(a)
-        allocate(a(ncenter))
+        allocate(a(ncenter), stat=istat)
+        if (istat /= 0) then
+            call qe_prepare_clear_globals()
+            call qe_set_allocation_error("qe_prepare_system", "a")
+            status = QE_ERROR_ALLOCATION; return
+        end if
         do i = 1, ncenter
             a(i)%index   = the_mol%atomic_numbers(i)
             a(i)%charge  = real(the_mol%atomic_numbers(i), 8)
@@ -909,26 +1107,58 @@ contains
         ! --- basstart / basend ---
         if (allocated(basstart)) deallocate(basstart)
         if (allocated(basend))   deallocate(basend)
-        allocate(basstart(ncenter), basend(ncenter))
+        allocate(basstart(ncenter), stat=istat)
+        if (istat /= 0) then
+            call qe_prepare_clear_globals()
+            call qe_set_allocation_error("qe_prepare_system", "basstart")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(basend(ncenter), stat=istat)
+        if (istat /= 0) then
+            call qe_prepare_clear_globals()
+            call qe_set_allocation_error("qe_prepare_system", "basend")
+            status = QE_ERROR_ALLOCATION; return
+        end if
         basstart = the_mol%basstart
         basend   = the_mol%basend
 
         ! --- Density matrices ---
         if (allocated(Ptot)) deallocate(Ptot)
-        allocate(Ptot(nbasis, nbasis))
+        allocate(Ptot(nbasis, nbasis), stat=istat)
+        if (istat /= 0) then
+            call qe_prepare_clear_globals()
+            call qe_set_allocation_error("qe_prepare_system", "Ptot")
+            status = QE_ERROR_ALLOCATION; return
+        end if
         Ptot = the_mol%density_total
 
         if (wfntype == 1 .or. wfntype == 2 .or. wfntype == 4) then
             if (allocated(Palpha)) deallocate(Palpha)
             if (allocated(Pbeta))  deallocate(Pbeta)
-            allocate(Palpha(nbasis, nbasis), Pbeta(nbasis, nbasis))
+            allocate(Palpha(nbasis, nbasis), stat=istat)
+            if (istat /= 0) then
+                call qe_prepare_clear_globals()
+                call qe_set_allocation_error("qe_prepare_system", "Palpha")
+                status = QE_ERROR_ALLOCATION; return
+            end if
+            allocate(Pbeta(nbasis, nbasis), stat=istat)
+            if (istat /= 0) then
+                call qe_prepare_clear_globals()
+                call qe_set_allocation_error("qe_prepare_system", "Pbeta")
+                status = QE_ERROR_ALLOCATION; return
+            end if
             Palpha = the_mol%density_alpha
             Pbeta  = the_mol%density_beta
         end if
 
         ! --- Overlap matrix ---
         if (allocated(Sbas)) deallocate(Sbas)
-        allocate(Sbas(nbasis, nbasis))
+        allocate(Sbas(nbasis, nbasis), stat=istat)
+        if (istat /= 0) then
+            call qe_prepare_clear_globals()
+            call qe_set_allocation_error("qe_prepare_system", "Sbas")
+            status = QE_ERROR_ALLOCATION; return
+        end if
         Sbas = the_mol%overlap
 
         ! --- UHF spin-resolved validation (only on the opt-in path) ---
@@ -942,27 +1172,41 @@ contains
                 trPSb = trPSb + sum(the_mol%density_beta(:,i) * the_mol%overlap(i,:))
             end do
             if (abs(trPSa - na_check) > 1.0e-8_c_double * max(1.0_c_double, abs(na_check))) then
+                call qe_prepare_clear_globals()
                 call qe_set_error(QE_ERROR_INVALID_ARGUMENT, "qe_prepare_system", &
                                   "Tr(P_alpha*S) does not match N_alpha")
                 status = QE_ERROR_INVALID_ARGUMENT; return
             end if
             if (abs(trPSb - nb_check) > 1.0e-8_c_double * max(1.0_c_double, abs(nb_check))) then
+                call qe_prepare_clear_globals()
                 call qe_set_error(QE_ERROR_INVALID_ARGUMENT, "qe_prepare_system", &
                                   "Tr(P_beta*S) does not match N_beta")
                 status = QE_ERROR_INVALID_ARGUMENT; return
             end if
             if (maxval(abs(the_mol%density_total - &
                            (the_mol%density_alpha + the_mol%density_beta))) > 1.0e-10_c_double) then
+                call qe_prepare_clear_globals()
                 call qe_set_error(QE_ERROR_INVALID_ARGUMENT, "qe_prepare_system", &
                                   "Ptotal must equal P_alpha + P_beta")
                 status = QE_ERROR_INVALID_ARGUMENT; return
             end if
-            allocate(psp(nbasis, nbasis))
+            if (.not. qe_check_product(nbasis, nbasis, "nbasis*nbasis", &
+                                       "qe_prepare_system", status)) then
+                call qe_prepare_clear_globals()
+                return
+            end if
+            allocate(psp(nbasis, nbasis), stat=istat)
+            if (istat /= 0) then
+                call qe_prepare_clear_globals()
+                call qe_set_allocation_error("qe_prepare_system", "spin idempotency scratch")
+                status = QE_ERROR_ALLOCATION; return
+            end if
             psp = matmul(matmul(the_mol%density_alpha, the_mol%overlap), &
                          the_mol%density_alpha)
             uhf_error = maxval(abs(psp - the_mol%density_alpha))
             uhf_scale = max(1.0_c_double, maxval(abs(the_mol%density_alpha)))
             if (uhf_error > 1.0e-6_c_double * uhf_scale) then
+                call qe_prepare_clear_globals()
                 call qe_set_error(QE_ERROR_INVALID_ARGUMENT, "qe_prepare_system", &
                                   "spin-resolved alpha density is not idempotent: P_a*S*P_a = P_a")
                 status = QE_ERROR_INVALID_ARGUMENT; deallocate(psp); return
@@ -972,6 +1216,7 @@ contains
             uhf_error = maxval(abs(psp - the_mol%density_beta))
             uhf_scale = max(1.0_c_double, maxval(abs(the_mol%density_beta)))
             if (uhf_error > 1.0e-6_c_double * uhf_scale) then
+                call qe_prepare_clear_globals()
                 call qe_set_error(QE_ERROR_INVALID_ARGUMENT, "qe_prepare_system", &
                                   "spin-resolved beta density is not idempotent: P_b*S*P_b = P_b")
                 status = QE_ERROR_INVALID_ARGUMENT; deallocate(psp); return
@@ -1057,6 +1302,47 @@ contains
     end function qe_state_release
 
     ! --- Helpers ---
+
+    !-----------------------------------------------------------------
+    ! Fail-closed cleanup for a partially completed qe_begin_system.
+    !-----------------------------------------------------------------
+    subroutine qe_begin_alloc_fail(what)
+        character(len=*), intent(in) :: what
+        integer(c_int) :: rel_status
+        call qe_set_allocation_error("qe_begin_system", what)
+        rel_status = qe_state_release()
+    end subroutine qe_begin_alloc_fail
+
+    !-----------------------------------------------------------------
+    ! Fail-closed cleanup of the Multiwfn globals pushed by a partially
+    ! completed qe_state_prepare. The canonical model is preserved so the
+    ! caller can retry or release it.
+    !-----------------------------------------------------------------
+    subroutine qe_prepare_clear_globals()
+        call qe_result_clear()
+        if (allocated(a))        deallocate(a)
+        if (allocated(basstart)) deallocate(basstart)
+        if (allocated(basend))   deallocate(basend)
+        if (allocated(Ptot))     deallocate(Ptot)
+        if (allocated(Palpha))   deallocate(Palpha)
+        if (allocated(Pbeta))    deallocate(Pbeta)
+        if (allocated(Sbas))     deallocate(Sbas)
+        ncenter = 0
+        nbasis  = 0
+        nprims  = 0
+        nmo     = 0
+        nelec   = 0
+        naelec  = 0
+        nbelec  = 0
+        wfntype = 0
+        imodwfn = 0
+    end subroutine qe_prepare_clear_globals
+
+    !-----------------------------------------------------------------
+    function qe_state_get_ncenter() result(n)
+        integer(c_int) :: n
+        n = the_mol%ncenter
+    end function qe_state_get_ncenter
 
     !-----------------------------------------------------------------
     ! Validate the optional v1 components. This is additive: an absent

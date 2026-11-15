@@ -12,6 +12,7 @@ module qe_genpprim
     use, intrinsic :: iso_c_binding
     use qe_status
     use qe_error_handler
+    use qe_limits
     use qe_molecular_state, only: the_mol
     use qe_genp, only: qe_genp_build_orbitals
     use qe_gensbas, only: qe_gensbas_build
@@ -36,7 +37,7 @@ contains
         integer(c_int), intent(out) :: status
         logical :: ok
         integer :: s, i, j, k, iao, iao_c, ip, l, ncomp, ncart, nprim_comp
-        integer :: start, cur_start
+        integer :: start, cur_start, istat
         real(c_double), allocatable :: Ccart_a(:,:), Ccart_b(:,:)
         real(c_double) :: conv5d6d(6,5), conv7f10f(10,7)
         real(c_double) :: conv9g15g(15,9), conv11h21h(21,11)
@@ -57,10 +58,21 @@ contains
 
         has_beta = (wfntype == 1)
 
-        allocate(Ccart_a(nbasisCar, nbasis))
+        if (.not. qe_check_product(nbasisCar, nbasis, "nbasisCar*nbasis", &
+                                   "qe_genpprim_generate", status)) return
+        allocate(Ccart_a(nbasisCar, nbasis), stat=istat)
+        if (istat /= 0) then
+            call qe_set_allocation_error("qe_genpprim_generate", "Ccart_a")
+            status = QE_ERROR_ALLOCATION; return
+        end if
         Ccart_a = 0.0_c_double
         if (has_beta) then
-            allocate(Ccart_b(nbasisCar, nbasis))
+            allocate(Ccart_b(nbasisCar, nbasis), stat=istat)
+            if (istat /= 0) then
+                deallocate(Ccart_a)
+                call qe_set_allocation_error("qe_genpprim_generate", "Ccart_b")
+                status = QE_ERROR_ALLOCATION; return
+            end if
             Ccart_b = 0.0_c_double
         end if
 
@@ -103,7 +115,20 @@ contains
         end do
 
         if (allocated(CO)) deallocate(CO)
-        allocate(CO(nmo, nprims))
+        if (.not. qe_check_product(nmo, nprims, "nmo*nprims", &
+                                   "qe_genpprim_generate", status)) then
+            deallocate(Ccart_a)
+            if (allocated(Ccart_b)) deallocate(Ccart_b)
+            return
+        end if
+        allocate(CO(nmo, nprims), stat=istat)
+        if (istat /= 0) then
+            deallocate(Ccart_a)
+            if (allocated(Ccart_b)) deallocate(Ccart_b)
+            call qe_genpprim_invalidate()
+            call qe_set_allocation_error("qe_genpprim_generate", "CO")
+            status = QE_ERROR_ALLOCATION; return
+        end if
         CO = 0.0_c_double
         do iao_c = 1, nbasisCar
             do ip = primstart(iao_c), primend(iao_c)
@@ -119,6 +144,12 @@ contains
         end do
 
         ! Original genPprim: Ptot_prim/Palpha_prim/Pbeta_prim (nprims,nprims)
+        if (.not. qe_check_product(nprims, nprims, "nprims*nprims", &
+                                   "qe_genpprim_generate", status)) then
+            deallocate(Ccart_a)
+            if (allocated(Ccart_b)) deallocate(Ccart_b)
+            return
+        end if
         call genPprim
         if (.not. allocated(Ptot_prim) .or. size(Ptot_prim,1) /= nprims) then
             call qe_set_error(QE_ERROR_CALCULATION, "qe_genpprim_generate", &
@@ -152,15 +183,21 @@ contains
         real(c_double), pointer :: out(:,:)
         real(c_double), allocatable :: Sp(:,:)
         real(c_double), external :: doSint
-        integer :: i, j, n
+        integer :: i, j, n, istat
         if (.not. c_associated(buffer)) then
             status = QE_ERROR_NULL_POINTER; return
         end if
         n = nprims
-        if (n <= 0 .or. capacity < n*n) then
+        if (n <= 0) then
             status = QE_ERROR_INVALID_DIMENSION; return
         end if
-        allocate(Sp(n,n))
+        if (.not. qe_check_capacity(n, capacity, "primitive overlap", &
+                                    "qe_genpprim_overlap", status)) return
+        allocate(Sp(n,n), stat=istat)
+        if (istat /= 0) then
+            call qe_set_allocation_error("qe_genpprim_overlap", "Sp")
+            status = QE_ERROR_ALLOCATION; return
+        end if
         do j = 1, n
             do i = 1, n
                 Sp(i,j) = doSint(i,j)
@@ -197,9 +234,11 @@ contains
         if (size(Ptot_prim,1) /= n) then
             status = QE_ERROR_INVALID_STATE; return
         end if
-        if (n <= 0 .or. capacity < n*n) then
+        if (n <= 0) then
             status = QE_ERROR_INVALID_DIMENSION; return
         end if
+        if (.not. qe_check_capacity(n, capacity, "primitive density result", &
+                                    "qe_genpprim_get", status)) return
         call c_f_pointer(buffer, out, [n, n])
         select case (result_id)
         case (0)

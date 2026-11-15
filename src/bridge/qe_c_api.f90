@@ -14,6 +14,7 @@ module qe_c_api
     use qe_status
     use qe_error_handler
     use qe_memory, only: qe_pointer_to_real2d
+    use qe_limits
     use qe_engine_state
     use qe_engine_lifecycle, only: qe_engine_initialize, qe_engine_finalize, &
                                     qe_engine_get_state_c
@@ -25,6 +26,7 @@ module qe_c_api
                                 qe_state_set_ao_normalization, &
                                 qe_state_set_angular_canonical, &
                                 qe_state_set_orbitals, qe_state_get_readiness, &
+                                qe_state_get_ncenter, &
                                 qe_state_prepare, qe_state_release
     use qe_mayer, only: qe_mayer_calculate, qe_mayer_get_dimensions, &
                          qe_mayer_get_metadata, qe_mayer_get_result
@@ -355,7 +357,7 @@ contains
         real(c_double), allocatable, target :: xyz_bohr(:,:)
         real(c_double), parameter :: BOHR_PER_ANGSTROM = 0.529177210903_c_double
         logical :: ok
-        integer :: i, j
+        integer :: i, j, istat
 
         ALLOWED = [QE_STATE_SYSTEM_LOADED]
         if (.not. qe_state_require(ALLOWED, 1, "qe_v1_set_atoms")) then
@@ -366,13 +368,24 @@ contains
                               "unit must be 0 (bohr) or 1 (angstrom)")
             status = QE_ERROR_INVALID_ARGUMENT; return
         end if
+        if (ncenter_ /= qe_state_get_ncenter()) then
+            call qe_set_error(QE_ERROR_INVALID_DIMENSION, "qe_v1_set_atoms", &
+                              "ncenter does not match qe_v1_model_begin")
+            status = QE_ERROR_INVALID_DIMENSION; return
+        end if
         if (unit == 0) then
             status = qe_state_set_atomic_data(ncenter_, z_ptr, coords_ptr)
             return
         end if
+        if (.not. qe_check_product(3_c_int, ncenter_, "3*ncenter", &
+                                   "qe_v1_set_atoms", status)) return
         ok = qe_pointer_to_real2d(coords_ptr, 3_c_int, ncenter_, xyz, status)
         if (.not. ok) return
-        allocate(xyz_bohr(3, ncenter_))
+        allocate(xyz_bohr(3, ncenter_), stat=istat)
+        if (istat /= 0) then
+            call qe_set_allocation_error("qe_v1_set_atoms", "xyz_bohr")
+            status = QE_ERROR_ALLOCATION; return
+        end if
         do j = 1, ncenter_
             do i = 1, 3
                 xyz_bohr(i,j) = xyz(i,j) / BOHR_PER_ANGSTROM

@@ -12,6 +12,7 @@ module qe_mayer
     use, intrinsic :: iso_c_binding
     use qe_status
     use qe_error_handler
+    use qe_limits
     use qe_engine_state, only: qe_open_shell_get, qe_state_require, qe_state_set
     use defvar, only: ncenter, nbasis, wfntype
     use qe_analysis_state, only: qe_result_t, qe_result_alloc, qe_result_clear, qe_result_get_ptr
@@ -30,6 +31,7 @@ contains
         integer(c_int) :: status
         type(qe_result_t), pointer :: res
         real(c_double), allocatable :: bndmattot(:,:), bndmata(:,:), bndmatb(:,:)
+        integer :: istat
         integer(c_int), parameter :: ALLOWED(1) = [3]  ! QE_STATE_SYSTEM_PREPARED
 
         if (.not. qe_state_require(ALLOWED, 1, "qe_calculate_mayer")) then
@@ -53,12 +55,35 @@ contains
         end if
 
         ! Allocate result and temporary matrices
-        call qe_result_alloc(ncenter, wfntype)
+        call qe_result_alloc(ncenter, wfntype, status)
+        if (status /= QE_SUCCESS) return
         res => qe_result_get_ptr()
 
-        allocate(bndmattot(ncenter, ncenter))
-        allocate(bndmata(ncenter, ncenter))
-        allocate(bndmatb(ncenter, ncenter))
+        if (.not. qe_check_product(ncenter, ncenter, "ncenter*ncenter", &
+                                   "qe_calculate_mayer", status)) then
+            call qe_result_clear()
+            return
+        end if
+        allocate(bndmattot(ncenter, ncenter), stat=istat)
+        if (istat /= 0) then
+            call qe_result_clear()
+            call qe_set_allocation_error("qe_calculate_mayer", "bndmattot")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(bndmata(ncenter, ncenter), stat=istat)
+        if (istat /= 0) then
+            deallocate(bndmattot)
+            call qe_result_clear()
+            call qe_set_allocation_error("qe_calculate_mayer", "bndmata")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(bndmatb(ncenter, ncenter), stat=istat)
+        if (istat /= 0) then
+            deallocate(bndmattot, bndmata)
+            call qe_result_clear()
+            call qe_set_allocation_error("qe_calculate_mayer", "bndmatb")
+            status = QE_ERROR_ALLOCATION; return
+        end if
         bndmattot = 0.0_c_double
         bndmata   = 0.0_c_double
         bndmatb   = 0.0_c_double
@@ -125,7 +150,7 @@ contains
         integer(c_int) :: status
         type(qe_result_t), pointer :: res
         real(c_double), pointer :: buf(:,:)
-        integer :: i, j, n, expected
+        integer :: n
 
         res => qe_result_get_ptr()
         if (.not. res%mayer_available) then
@@ -135,12 +160,8 @@ contains
         end if
 
         n = res%mayer_ncenter
-        expected = n * n
-        if (capacity < expected) then
-            call qe_set_error(QE_ERROR_INVALID_DIMENSION, "qe_get_mayer_result", &
-                              "buffer too small")
-            status = QE_ERROR_INVALID_DIMENSION; return
-        end if
+        if (.not. qe_check_capacity(n, capacity, "Mayer result", &
+                                    "qe_get_mayer_result", status)) return
         if (.not. c_associated(buffer)) then
             call qe_set_error(QE_ERROR_NULL_POINTER, "qe_get_mayer_result", &
                               "buffer pointer is null")

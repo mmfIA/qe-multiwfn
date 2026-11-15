@@ -5,6 +5,8 @@
 module qe_analysis_state
     use, intrinsic :: iso_c_binding
     use qe_status
+    use qe_error_handler
+    use qe_limits
     implicit none
     private
 
@@ -28,17 +30,46 @@ module qe_analysis_state
 
 contains
 
-    subroutine qe_result_alloc(ncenter, wfntype)
+    subroutine qe_result_alloc(ncenter, wfntype, status)
         integer(c_int), intent(in) :: ncenter, wfntype
-        call qe_result_clear_internal()
-        if (ncenter <= 0) return
+        integer(c_int), intent(out) :: status
+        integer :: istat
 
-        allocate(the_result%mayer_total(ncenter, ncenter))
+        call qe_result_clear_internal()
+        status = QE_SUCCESS
+        if (ncenter <= 0) then
+            call qe_set_error(QE_ERROR_INVALID_DIMENSION, "qe_result_alloc", &
+                              "ncenter must be positive")
+            status = QE_ERROR_INVALID_DIMENSION
+            return
+        end if
+        if (.not. qe_check_product(ncenter, ncenter, "ncenter*ncenter", &
+                                   "qe_result_alloc", status)) return
+
+        allocate(the_result%mayer_total(ncenter, ncenter), stat=istat)
+        if (istat /= 0) then
+            call qe_result_clear_internal()
+            call qe_set_allocation_error("qe_result_alloc", "mayer_total")
+            status = QE_ERROR_ALLOCATION
+            return
+        end if
         the_result%mayer_total = 0.0_c_double
 
         if (wfntype == 1 .or. wfntype == 2 .or. wfntype == 4) then
-            allocate(the_result%mayer_alpha(ncenter, ncenter))
-            allocate(the_result%mayer_beta(ncenter, ncenter))
+            allocate(the_result%mayer_alpha(ncenter, ncenter), stat=istat)
+            if (istat /= 0) then
+                call qe_result_clear_internal()
+                call qe_set_allocation_error("qe_result_alloc", "mayer_alpha")
+                status = QE_ERROR_ALLOCATION
+                return
+            end if
+            allocate(the_result%mayer_beta(ncenter, ncenter), stat=istat)
+            if (istat /= 0) then
+                call qe_result_clear_internal()
+                call qe_set_allocation_error("qe_result_alloc", "mayer_beta")
+                status = QE_ERROR_ALLOCATION
+                return
+            end if
             the_result%mayer_alpha = 0.0_c_double
             the_result%mayer_beta  = 0.0_c_double
             the_result%mayer_has_spin = .true.

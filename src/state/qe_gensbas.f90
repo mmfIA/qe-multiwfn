@@ -13,6 +13,7 @@ module qe_gensbas
     use, intrinsic :: iso_c_binding
     use qe_status
     use qe_error_handler
+    use qe_limits
     use qe_molecular_state, only: the_mol
     use qe_analysis_state, only: qe_result_clear
     use defvar, only: a, b, basshell, bascen, bastype, &
@@ -42,7 +43,8 @@ contains
         integer(c_int), intent(out) :: status
         logical :: ok
         integer :: s, i, j, k, ip, iao, iao_cart, ncomp, ncart, nprim_comp
-        integer :: start, finish, l, center, typ, nprimshell_total
+        integer :: start, finish, l, center, typ, nprimshell_total, istat
+        integer(c_int) :: nprim_add
         real(c_double) :: scale, coeff, expo
         real(c_double), external :: normgau
         logical :: spherical, any_spherical
@@ -72,6 +74,14 @@ contains
                               "shell table missing")
             return
         end if
+        if (.not. qe_check_dimension(the_mol%ncenter, "ncenter", &
+                                     "qe_gensbas_build", status)) return
+        if (.not. qe_check_dimension(the_mol%nbasis, "nbasis", &
+                                     "qe_gensbas_build", status)) return
+        if (.not. qe_check_dimension(the_mol%nprims, "nprims", &
+                                     "qe_gensbas_build", status)) return
+        if (.not. qe_check_dimension(the_mol%nshell, "nshell", &
+                                     "qe_gensbas_build", status)) return
 
         ncenter = the_mol%ncenter
         nbasis = the_mol%nbasis
@@ -83,7 +93,12 @@ contains
 
         ! Atoms
         if (allocated(a)) deallocate(a)
-        allocate(a(ncenter))
+        allocate(a(ncenter), stat=istat)
+        if (istat /= 0) then
+            call qe_gensbas_clear_all()
+            call qe_set_allocation_error("qe_gensbas_build", "a")
+            status = QE_ERROR_ALLOCATION; return
+        end if
         do i = 1, ncenter
             a(i)%index = the_mol%atomic_numbers(i)
             a(i)%charge = real(the_mol%atomic_numbers(i), 8)
@@ -164,9 +179,18 @@ contains
                     return
                 end if
             end if
+            if (.not. qe_check_product(ncart, nprim_comp, "ncart*nprim_comp", &
+                                       "qe_gensbas_build", status)) return
+            nprim_add = ncart * nprim_comp
+            if (.not. qe_check_sum(nbasisCar, ncart, "nbasisCar+ncart", &
+                                   "qe_gensbas_build", status)) return
             nbasisCar = nbasisCar + ncart
-            nprims = nprims + ncart * nprim_comp
+            if (.not. qe_check_sum(nprims, nprim_add, "nprims+nprim_add", &
+                                   "qe_gensbas_build", status)) return
+            nprims = nprims + nprim_add
         end do
+        if (.not. qe_check_product(nbasisCar, nbasisCar, "nbasisCar*nbasisCar", &
+                                   "qe_gensbas_build", status)) return
 
         if (allocated(b)) deallocate(b)
         if (allocated(primstart)) deallocate(primstart)
@@ -184,17 +208,113 @@ contains
         if (allocated(primshexp)) deallocate(primshexp)
         if (allocated(primshcoeff)) deallocate(primshcoeff)
 
-        allocate(b(nprims), primstart(nbasisCar), primend(nbasisCar), primconnorm(nprims))
-        allocate(basshell(nbasis), bascen(nbasis), bastype(nbasis))
-        allocate(basstart(ncenter), basend(ncenter))
-        allocate(shtype(nshell), shtypeCar(nshell), shcen(nshell), shcon(nshell))
+        allocate(b(nprims), stat=istat)
+        if (istat /= 0) then
+            call qe_gensbas_clear_all()
+            call qe_set_allocation_error("qe_gensbas_build", "b")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(primstart(nbasisCar), stat=istat)
+        if (istat /= 0) then
+            call qe_gensbas_clear_all()
+            call qe_set_allocation_error("qe_gensbas_build", "primstart")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(primend(nbasisCar), stat=istat)
+        if (istat /= 0) then
+            call qe_gensbas_clear_all()
+            call qe_set_allocation_error("qe_gensbas_build", "primend")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(primconnorm(nprims), stat=istat)
+        if (istat /= 0) then
+            call qe_gensbas_clear_all()
+            call qe_set_allocation_error("qe_gensbas_build", "primconnorm")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(basshell(nbasis), stat=istat)
+        if (istat /= 0) then
+            call qe_gensbas_clear_all()
+            call qe_set_allocation_error("qe_gensbas_build", "basshell")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(bascen(nbasis), stat=istat)
+        if (istat /= 0) then
+            call qe_gensbas_clear_all()
+            call qe_set_allocation_error("qe_gensbas_build", "bascen")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(bastype(nbasis), stat=istat)
+        if (istat /= 0) then
+            call qe_gensbas_clear_all()
+            call qe_set_allocation_error("qe_gensbas_build", "bastype")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(basstart(ncenter), stat=istat)
+        if (istat /= 0) then
+            call qe_gensbas_clear_all()
+            call qe_set_allocation_error("qe_gensbas_build", "basstart")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(basend(ncenter), stat=istat)
+        if (istat /= 0) then
+            call qe_gensbas_clear_all()
+            call qe_set_allocation_error("qe_gensbas_build", "basend")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(shtype(nshell), stat=istat)
+        if (istat /= 0) then
+            call qe_gensbas_clear_all()
+            call qe_set_allocation_error("qe_gensbas_build", "shtype")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(shtypeCar(nshell), stat=istat)
+        if (istat /= 0) then
+            call qe_gensbas_clear_all()
+            call qe_set_allocation_error("qe_gensbas_build", "shtypeCar")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(shcen(nshell), stat=istat)
+        if (istat /= 0) then
+            call qe_gensbas_clear_all()
+            call qe_set_allocation_error("qe_gensbas_build", "shcen")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(shcon(nshell), stat=istat)
+        if (istat /= 0) then
+            call qe_gensbas_clear_all()
+            call qe_set_allocation_error("qe_gensbas_build", "shcon")
+            status = QE_ERROR_ALLOCATION; return
+        end if
         nprimshell_total = 0
         do s = 1, nshell
             ncomp = count(the_mol%ao_shell == s)
-            nprimshell_total = nprimshell_total + &
-                (the_mol%shell_prim_end(s) - the_mol%shell_prim_start(s) + 1) / ncomp
+            if (ncomp <= 0) then
+                call qe_gensbas_clear_all()
+                call qe_set_error(QE_ERROR_INVALID_ARGUMENT, "qe_gensbas_build", &
+                                  "shell has no AO mapping")
+                status = QE_ERROR_INVALID_ARGUMENT; return
+            end if
+            nprim_add = (the_mol%shell_prim_end(s) - the_mol%shell_prim_start(s) + 1) / ncomp
+            if (.not. qe_check_sum(nprimshell_total, nprim_add, &
+                                   "nprimshell_total", "qe_gensbas_build", status)) then
+                call qe_gensbas_clear_all()
+                return
+            end if
+            nprimshell_total = nprimshell_total + nprim_add
         end do
-        allocate(primshexp(nprimshell_total), primshcoeff(nprimshell_total))
+        allocate(primshexp(nprimshell_total), stat=istat)
+        if (istat /= 0) then
+            call qe_gensbas_clear_all()
+            call qe_set_allocation_error("qe_gensbas_build", "primshexp")
+            status = QE_ERROR_ALLOCATION; return
+        end if
+        allocate(primshcoeff(nprimshell_total), stat=istat)
+        if (istat /= 0) then
+            call qe_gensbas_clear_all()
+            call qe_set_allocation_error("qe_gensbas_build", "primshcoeff")
+            status = QE_ERROR_ALLOCATION; return
+        end if
 
         ! Current-basis ownership
         do i = 1, nbasis
@@ -282,6 +402,7 @@ contains
         end do
 
         if (iao_cart - 1 /= nbasisCar .or. ip - 1 /= nprims) then
+            call qe_gensbas_clear_all()
             call qe_set_error(QE_ERROR_INTERNAL, "qe_gensbas_build", &
                               "Cartesian AO/primitive count mismatch")
             status = QE_ERROR_INTERNAL
@@ -322,16 +443,28 @@ contains
         external :: genSbas
         real(c_double), allocatable :: Sbas_keep(:,:)
         logical :: had_sbas
+        integer :: istat
 
         ok = .false.
+        if (.not. qe_check_product(nbasisCar, nbasisCar, "nbasisCar*nbasisCar", &
+                                   "qe_gensbas_generate_cartesian", status)) return
         call qe_gensbas_invalidate_cartesian()
         had_sbas = allocated(Sbas)
         if (had_sbas) then
-            allocate(Sbas_keep(size(Sbas,1), size(Sbas,2)))
+            allocate(Sbas_keep(size(Sbas,1), size(Sbas,2)), stat=istat)
+            if (istat /= 0) then
+                call qe_set_allocation_error("qe_gensbas_generate_cartesian", "Sbas_keep")
+                status = QE_ERROR_ALLOCATION; return
+            end if
             Sbas_keep = Sbas
             deallocate(Sbas)
         end if
-        allocate(Sbas(nbasisCar, nbasisCar))
+        allocate(Sbas(nbasisCar, nbasisCar), stat=istat)
+        if (istat /= 0) then
+            if (allocated(Sbas_keep)) deallocate(Sbas_keep)
+            call qe_set_allocation_error("qe_gensbas_generate_cartesian", "Sbas")
+            status = QE_ERROR_ALLOCATION; return
+        end if
         call qe_result_clear()
         call genSbas
         if (.not. allocated(Sbas)) then
@@ -339,21 +472,43 @@ contains
                               "qe_gensbas_generate_cartesian", &
                               "genSbas did not allocate Sbas")
             if (had_sbas) then
-                allocate(Sbas(size(Sbas_keep,1), size(Sbas_keep,2)))
-                Sbas = Sbas_keep
+                allocate(Sbas(size(Sbas_keep,1), size(Sbas_keep,2)), stat=istat)
+                if (istat == 0) Sbas = Sbas_keep
+                deallocate(Sbas_keep)
             end if
             status = QE_ERROR_CALCULATION
             return
         end if
         if (allocated(Sbas_cart_saved)) deallocate(Sbas_cart_saved)
-        allocate(Sbas_cart_saved(nbasisCar, nbasisCar))
+        allocate(Sbas_cart_saved(nbasisCar, nbasisCar), stat=istat)
+        if (istat /= 0) then
+            if (had_sbas .and. allocated(Sbas_keep)) then
+                deallocate(Sbas)
+                allocate(Sbas(size(Sbas_keep,1), size(Sbas_keep,2)), stat=istat)
+                if (istat == 0) Sbas = Sbas_keep
+            else
+                deallocate(Sbas)
+            end if
+            if (allocated(Sbas_keep)) deallocate(Sbas_keep)
+            cart_overlap_valid = .false.
+            call qe_set_allocation_error("qe_gensbas_generate_cartesian", "Sbas_cart_saved")
+            status = QE_ERROR_ALLOCATION
+            return
+        end if
         Sbas_cart_saved = Sbas
         cart_overlap_valid = .true.
 
         ! Restore the current-basis Sbas (diagnostic call must not corrupt state).
         deallocate(Sbas)
         if (had_sbas) then
-            allocate(Sbas(size(Sbas_keep,1), size(Sbas_keep,2)))
+            allocate(Sbas(size(Sbas_keep,1), size(Sbas_keep,2)), stat=istat)
+            if (istat /= 0) then
+                deallocate(Sbas_keep)
+                call qe_set_allocation_error("qe_gensbas_generate_cartesian", &
+                                             "Sbas restore")
+                status = QE_ERROR_ALLOCATION
+                return
+            end if
             Sbas = Sbas_keep
             deallocate(Sbas_keep)
         end if
@@ -384,9 +539,8 @@ contains
             status = QE_ERROR_INVALID_STATE; return
         end if
         n = size(Sbas,1)
-        if (capacity < n*n) then
-            status = QE_ERROR_INVALID_DIMENSION; return
-        end if
+        if (.not. qe_check_capacity(n, capacity, "overlap result", &
+                                    "qe_gensbas_get_current", status)) return
         call c_f_pointer(buffer, out, [n, n])
         out = Sbas
         status = QE_SUCCESS
@@ -413,13 +567,40 @@ contains
                               "Cartesian overlap dimensions are stale")
             status = QE_ERROR_INVALID_STATE; return
         end if
-        if (capacity < n*n) then
-            status = QE_ERROR_INVALID_DIMENSION; return
-        end if
+        if (.not. qe_check_capacity(n, capacity, "Cartesian overlap result", &
+                                    "qe_gensbas_get_cartesian", status)) return
         call c_f_pointer(buffer, out, [n, n])
         out = Sbas_cart_saved
         status = QE_SUCCESS
     end function qe_gensbas_get_cartesian
+
+    !-----------------------------------------------------------------
+    ! Fail-closed cleanup of all basis globals built by qe_gensbas_build.
+    !-----------------------------------------------------------------
+    subroutine qe_gensbas_clear_all()
+        if (allocated(a))           deallocate(a)
+        if (allocated(b))           deallocate(b)
+        if (allocated(primstart))   deallocate(primstart)
+        if (allocated(primend))     deallocate(primend)
+        if (allocated(primconnorm)) deallocate(primconnorm)
+        if (allocated(basshell))    deallocate(basshell)
+        if (allocated(bascen))      deallocate(bascen)
+        if (allocated(bastype))     deallocate(bastype)
+        if (allocated(basstart))    deallocate(basstart)
+        if (allocated(basend))      deallocate(basend)
+        if (allocated(shtype))      deallocate(shtype)
+        if (allocated(shtypeCar))   deallocate(shtypeCar)
+        if (allocated(shcen))       deallocate(shcen)
+        if (allocated(shcon))       deallocate(shcon)
+        if (allocated(primshexp))   deallocate(primshexp)
+        if (allocated(primshcoeff)) deallocate(primshcoeff)
+        if (allocated(Sbas))        deallocate(Sbas)
+        call qe_gensbas_invalidate_cartesian()
+        call qe_result_clear()
+        nbasisCar = 0
+        nprims = 0
+        nshell = 0
+    end subroutine qe_gensbas_clear_all
 
     !-----------------------------------------------------------------
     subroutine qe_gensbas_invalidate_cartesian()

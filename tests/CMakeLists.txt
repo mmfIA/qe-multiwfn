@@ -51,3 +51,11 @@ add_executable(test_uhf_abi_c
 target_link_libraries(test_uhf_abi_c qe_multiwfn)
 target_include_directories(test_uhf_abi_c PRIVATE ${CMAKE_SOURCE_DIR}/include)
 add_test(NAME uhf_abi_c COMMAND test_uhf_abi_c)
+
+# ---- C ABI test: permanent negative cases (dims, NULL, capacity, alloc) ----
+add_executable(test_abi_negative_c
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/test_abi_negative.c
+)
+target_link_libraries(test_abi_negative_c qe_multiwfn)
+target_include_directories(test_abi_negative_c PRIVATE ${CMAKE_SOURCE_DIR}/include)
+add_test(NAME abi_negative_c COMMAND test_abi_negative_c)

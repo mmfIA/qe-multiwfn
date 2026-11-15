@@ -7,6 +7,7 @@ module qe_memory
     use, intrinsic :: iso_c_binding
     use qe_status
     use qe_error_handler
+    use qe_limits
     implicit none
     private
 
@@ -38,10 +39,7 @@ contains
             ok = .false.
             return
         end if
-        if (m <= 0 .or. n <= 0) then
-            call qe_set_error(QE_ERROR_INVALID_DIMENSION, "qe_pointer_to_real2d", &
-                              "non-positive dimension")
-            status = QE_ERROR_INVALID_DIMENSION
+        if (.not. qe_check_product(m, n, "m*n", "qe_pointer_to_real2d", status)) then
             ok = .false.
             return
         end if
@@ -65,10 +63,7 @@ contains
             ok = .false.
             return
         end if
-        if (n <= 0) then
-            call qe_set_error(QE_ERROR_INVALID_DIMENSION, "qe_pointer_to_real1d", &
-                              "non-positive dimension")
-            status = QE_ERROR_INVALID_DIMENSION
+        if (.not. qe_check_dimension(n, "n", "qe_pointer_to_real1d", status)) then
             ok = .false.
             return
         end if
@@ -92,10 +87,7 @@ contains
             ok = .false.
             return
         end if
-        if (n <= 0) then
-            call qe_set_error(QE_ERROR_INVALID_DIMENSION, "qe_pointer_to_int1d", &
-                              "non-positive dimension")
-            status = QE_ERROR_INVALID_DIMENSION
+        if (.not. qe_check_dimension(n, "n", "qe_pointer_to_int1d", status)) then
             ok = .false.
             return
         end if

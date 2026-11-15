@@ -11,6 +11,7 @@ module qe_genp
     use, intrinsic :: iso_c_binding
     use qe_status
     use qe_error_handler
+    use qe_limits
     use qe_molecular_state, only: the_mol
     use qe_analysis_state, only: qe_result_clear
     use defvar, only: CObasa, CObasb, MOocc, MOtype, &
@@ -33,7 +34,7 @@ contains
     function qe_genp_build_orbitals(status) result(ok)
         integer(c_int), intent(out) :: status
         logical :: ok
-        integer :: i, j, k, n, nalpha, nbeta, ndouble, nsingle, nempty
+        integer :: i, j, k, n, nalpha, nbeta, ndouble, nsingle, nempty, istat
         integer, allocatable :: alpha_idx(:), beta_idx(:), order(:)
         real(c_double) :: occ
         logical :: has_alpha, has_beta
@@ -72,8 +73,29 @@ contains
         if (wfntype == 0) then
             ! RHF: nmo = nbasis, doubly occupied
             nmo = nbasis
-            allocate(CObasa(nbasis, nmo))
-            allocate(MOocc(nmo), MOtype(nmo))
+            if (.not. qe_check_product(nbasis, nmo, "nbasis*nmo", &
+                                       "qe_genp_build_orbitals", status)) then
+                call qe_genp_clear_globals()
+                return
+            end if
+            allocate(CObasa(nbasis, nmo), stat=istat)
+            if (istat /= 0) then
+                call qe_genp_clear_globals()
+                call qe_set_allocation_error("qe_genp_build_orbitals", "CObasa")
+                status = QE_ERROR_ALLOCATION; return
+            end if
+            allocate(MOocc(nmo), stat=istat)
+            if (istat /= 0) then
+                call qe_genp_clear_globals()
+                call qe_set_allocation_error("qe_genp_build_orbitals", "MOocc")
+                status = QE_ERROR_ALLOCATION; return
+            end if
+            allocate(MOtype(nmo), stat=istat)
+            if (istat /= 0) then
+                call qe_genp_clear_globals()
+                call qe_set_allocation_error("qe_genp_build_orbitals", "MOtype")
+                status = QE_ERROR_ALLOCATION; return
+            end if
             MOocc = 0.0_c_double
             MOtype = 0
             do i = 1, nmo
@@ -92,7 +114,18 @@ contains
         if (wfntype == 1) then
             ! UHF: alpha and beta coefficient blocks selected by spin code.
             n = the_mol%nmo_v1
-            allocate(alpha_idx(n), beta_idx(n))
+            if (.not. qe_check_dimension(n, "nmo", "qe_genp_build_orbitals", status)) return
+            allocate(alpha_idx(n), stat=istat)
+            if (istat /= 0) then
+                call qe_set_allocation_error("qe_genp_build_orbitals", "alpha_idx")
+                status = QE_ERROR_ALLOCATION; return
+            end if
+            allocate(beta_idx(n), stat=istat)
+            if (istat /= 0) then
+                deallocate(alpha_idx)
+                call qe_set_allocation_error("qe_genp_build_orbitals", "beta_idx")
+                status = QE_ERROR_ALLOCATION; return
+            end if
             nalpha = 0; nbeta = 0
             do i = 1, n
                 if (the_mol%orb_spin(i) == 1) then
@@ -108,9 +141,47 @@ contains
                 deallocate(alpha_idx, beta_idx)
                 return
             end if
+            if (.not. qe_check_product(2_c_int, nbasis, "2*nbasis", &
+                                       "qe_genp_build_orbitals", status)) then
+                deallocate(alpha_idx, beta_idx)
+                call qe_genp_clear_globals()
+                return
+            end if
             nmo = 2 * nbasis
-            allocate(CObasa(nbasis, nbasis), CObasb(nbasis, nbasis))
-            allocate(MOocc(nmo), MOtype(nmo))
+            if (.not. qe_check_product(nbasis, nbasis, "nbasis*nbasis", &
+                                       "qe_genp_build_orbitals", status)) then
+                deallocate(alpha_idx, beta_idx)
+                call qe_genp_clear_globals()
+                return
+            end if
+            allocate(CObasa(nbasis, nbasis), stat=istat)
+            if (istat /= 0) then
+                deallocate(alpha_idx, beta_idx)
+                call qe_genp_clear_globals()
+                call qe_set_allocation_error("qe_genp_build_orbitals", "CObasa")
+                status = QE_ERROR_ALLOCATION; return
+            end if
+            allocate(CObasb(nbasis, nbasis), stat=istat)
+            if (istat /= 0) then
+                deallocate(alpha_idx, beta_idx)
+                call qe_genp_clear_globals()
+                call qe_set_allocation_error("qe_genp_build_orbitals", "CObasb")
+                status = QE_ERROR_ALLOCATION; return
+            end if
+            allocate(MOocc(nmo), stat=istat)
+            if (istat /= 0) then
+                deallocate(alpha_idx, beta_idx)
+                call qe_genp_clear_globals()
+                call qe_set_allocation_error("qe_genp_build_orbitals", "MOocc")
+                status = QE_ERROR_ALLOCATION; return
+            end if
+            allocate(MOtype(nmo), stat=istat)
+            if (istat /= 0) then
+                deallocate(alpha_idx, beta_idx)
+                call qe_genp_clear_globals()
+                call qe_set_allocation_error("qe_genp_build_orbitals", "MOtype")
+                status = QE_ERROR_ALLOCATION; return
+            end if
             MOocc = 0.0_c_double
             MOtype = 0
             do i = 1, nbasis
@@ -153,7 +224,11 @@ contains
                     nempty = nempty + 1
                 end if
             end do
-            allocate(order(n))
+            allocate(order(n), stat=istat)
+            if (istat /= 0) then
+                call qe_set_allocation_error("qe_genp_build_orbitals", "order")
+                status = QE_ERROR_ALLOCATION; return
+            end if
             k = 0
             do i = 1, n
                 if (the_mol%orb_occupations(i) > 1.5_c_double) then
@@ -172,8 +247,33 @@ contains
                 end if
             end do
             nmo = nbasis
-            allocate(CObasa(nbasis, nmo))
-            allocate(MOocc(nmo), MOtype(nmo))
+            if (.not. qe_check_product(nbasis, nmo, "nbasis*nmo", &
+                                       "qe_genp_build_orbitals", status)) then
+                deallocate(order)
+                call qe_genp_clear_globals()
+                return
+            end if
+            allocate(CObasa(nbasis, nmo), stat=istat)
+            if (istat /= 0) then
+                deallocate(order)
+                call qe_genp_clear_globals()
+                call qe_set_allocation_error("qe_genp_build_orbitals", "CObasa")
+                status = QE_ERROR_ALLOCATION; return
+            end if
+            allocate(MOocc(nmo), stat=istat)
+            if (istat /= 0) then
+                deallocate(order)
+                call qe_genp_clear_globals()
+                call qe_set_allocation_error("qe_genp_build_orbitals", "MOocc")
+                status = QE_ERROR_ALLOCATION; return
+            end if
+            allocate(MOtype(nmo), stat=istat)
+            if (istat /= 0) then
+                deallocate(order)
+                call qe_genp_clear_globals()
+                call qe_set_allocation_error("qe_genp_build_orbitals", "MOtype")
+                status = QE_ERROR_ALLOCATION; return
+            end if
             MOocc = 0.0_c_double
             MOtype = 0
             do i = 1, nmo
@@ -257,12 +357,14 @@ contains
             return
         end if
         n = nbasis
-        if (n <= 0 .or. capacity < n * n) then
+        if (n <= 0) then
             call qe_set_error(QE_ERROR_INVALID_DIMENSION, "qe_genp_get_density", &
-                              "buffer too small or system not prepared")
+                              "system not prepared")
             status = QE_ERROR_INVALID_DIMENSION
             return
         end if
+        if (.not. qe_check_capacity(n, capacity, "density result", &
+                                    "qe_genp_get_density", status)) return
         call c_f_pointer(buffer, out, [n, n])
         select case (result_id)
         case (0)
@@ -289,6 +391,17 @@ contains
             status = QE_ERROR_INVALID_ARGUMENT
         end select
     end function qe_genp_get_density
+
+    !-----------------------------------------------------------------
+    subroutine qe_genp_clear_globals()
+        if (allocated(CObasa)) deallocate(CObasa)
+        if (allocated(CObasb)) deallocate(CObasb)
+        if (allocated(MOocc))  deallocate(MOocc)
+        if (allocated(MOtype)) deallocate(MOtype)
+        nmo = 0
+        naelec = 0
+        nbelec = 0
+    end subroutine qe_genp_clear_globals
 
     !-----------------------------------------------------------------
     function coeff_at(ao, imo) result(v)

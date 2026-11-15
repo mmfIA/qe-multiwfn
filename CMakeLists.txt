@@ -85,6 +85,7 @@ add_library(qe_bridge_objects OBJECT
     ${CMAKE_SOURCE_DIR}/src/bridge/qe_c_types.f90
     ${CMAKE_SOURCE_DIR}/src/bridge/qe_status.f90
     ${CMAKE_SOURCE_DIR}/src/bridge/qe_error_handler.f90
+    ${CMAKE_SOURCE_DIR}/src/bridge/qe_limits.f90
     ${CMAKE_SOURCE_DIR}/src/bridge/qe_memory.f90
     ${CMAKE_SOURCE_DIR}/src/bridge/qe_hyp2f2_stub.f90
     ${CMAKE_SOURCE_DIR}/src/engine/qe_engine_state.f90
